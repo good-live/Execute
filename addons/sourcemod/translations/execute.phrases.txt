@@ -1,0 +1,11 @@
+"Phrases"
+{
+	"TAG"
+	{
+		"en"	"[{green}Executes]{default}"
+	}
+	"Not enough players"
+	{
+		"en"	"There is {purple}no scenario{default} for the current amount of player."
+	}
+}
