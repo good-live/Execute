@@ -29,13 +29,18 @@ StringMap g_smActiveScenario;
 
 bool g_bIsActive;
 
+public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
+{
+	CreateNative("Ex_RegisterScenario", Native_RegisterScenario);
+}
+
 public void OnPluginStart()
 {
+	LoadTranslations("execute.phrases");
 	g_aScenarios = new ArrayList(1);
+	g_aPossibleScenarios = new ArrayList(1);
 	g_aQueue = new ArrayList(1);
 	HookEvent("round_start", OnRoundStart);
-	
-	LoadTranslations("execute.phrases");
 }
 
 public void OnRoundStart(Event event, const char[] name, bool dontBroadcast)
@@ -58,14 +63,16 @@ void CalculatePlayers()
 	for (int i = 1; i <= MaxClients; i++)
 		if(IsClientConnected(i))
 			CPrintToChat(i, "%t%t", "TAG", "Not enough players");
+	
+	g_bActive = false;
 }
 
 int GetActivePlayers()
 {
 	int iCounter;
-	for (int i = 0; i <= MaxClients; i++)
+	for (int i = 1; i <= MaxClients; i++)
 	{
-		if(IsClientValid(i) && GetClientTeam(i) <= CS_TEAM_SPECTATOR)
+		if(IsClientValid(i) && GetClientTeam(i) > CS_TEAM_SPECTATOR)
 			iCounter++;
 	}
 	return iCounter;
@@ -81,8 +88,6 @@ int GetScenarioAmount(int iClientAmount)
 		if(smBuffer.GetValue("amount", iTemp))
 			if(iTemp == iClientAmount)
 				iAmount++;
-			else if(iTemp > iClientAmount)
-				return iAmount;
 	}
 	return iAmount;
 }
@@ -103,6 +108,7 @@ void LoadPossibleScenarios(int iClientAmount)
 
 void InitiateRandomScenario(int iAmountQueue)
 {
+	
 	int iIndex;
 	
 	SetRandomSeed(GetTime());
@@ -134,9 +140,10 @@ void InitiateRandomScenario(int iAmountQueue)
 
 void SpawnClients(ArrayList aActiveClients)
 {
-	for (int i = 0; i < aActiveClients.Length; i++)
+	for (int i = 1; i < aActiveClients.Length; i++)
 	{
-		CPrintToChatAll("[Execute] Spawning now %N", aActiveClients.Get(i));
+		if(IsClientValid(i))
+			CPrintToChatAll("[Execute] Spawning now %N", aActiveClients.Get(i));
 	}
 }
 
@@ -172,30 +179,14 @@ stock int IsClientValid(int client)
 
 public int Native_RegisterScenario(Handle plugin, int numParams)
 {
+	
 	StringMap smScenario = GetNativeCell(1);
+	int iAmount;
+	smScenario.GetValue("amount", iAmount);
+	CPrintToChatAll("Adding a new scenario for %i players", iAmount );
 	if(smScenario == INVALID_HANDLE)
 		return 0;
 		
 	g_aScenarios.Push(smScenario);
-	SortADTArrayCustom(g_aScenarios, SortScenariosByAmount);
 	return 0;
-}
-
-public int SortScenariosByAmount(int index1, int index2, Handle array, Handle hndl)
-{
-	StringMap scenario1 = view_as<StringMap>(g_aScenarios.Get(index1));
-	StringMap scenario2 = view_as<StringMap>(g_aScenarios.Get(index2));
-	int amount1;
-	int amount2;
-	if(!scenario1.GetValue("amount", amount1))
-		amount1 = -1;
-	if(!scenario2.GetValue("amount", amount2))
-		amount2 = -1;
-	
-	if(amount1 < amount2)
-		return -1;
-	if(amount1 == amount2)
-		return 0;
-		
-	return 1;
 }

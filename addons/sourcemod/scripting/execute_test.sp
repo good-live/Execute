@@ -32,39 +32,28 @@ public void OnAllPluginsLoaded()
 	scenario.SetString("name", "Test1", true);
 	Ex_RegisterScenario(scenario);
 	
-	scenario.SetValue("amount", 2, true);
-	scenario.SetString("name", "Test2", true);
-	Ex_RegisterScenario(scenario);
+	StringMap scenario2 = new StringMap();
+	scenario2.SetValue("amount", 2, true);
+	scenario2.SetString("name", "Test2", true);
+	Ex_RegisterScenario(scenario2);
 	
-	scenario.SetValue("amount", 3, true);
-	scenario.SetString("name", "Test3", true);
-	Ex_RegisterScenario(scenario);
+	StringMap scenario3 = new StringMap();
+	scenario3.SetValue("amount", 3, true);
+	scenario3.SetString("name", "Test3", true);
+	Ex_RegisterScenario(scenario3);
 	
-	scenario.SetValue("amount", 4, true);
-	scenario.SetString("name", "Test4", true);
-	Ex_RegisterScenario(scenario);
+	StringMap scenario4 = new StringMap();
+	scenario4.SetValue("amount", 4, true);
+	scenario4.SetString("name", "Test4", true);
+	Ex_RegisterScenario(scenario4);
 	
-	scenario.SetValue("amount", 5, true);
-	scenario.SetString("name", "Test5", true);
-	Ex_RegisterScenario(scenario);
+	StringMap scenario5 = new StringMap();
+	scenario5.SetValue("amount", 5, true);
+	scenario5.SetString("name", "Test5", true);
+	Ex_RegisterScenario(scenario5);
 	
-	scenario.SetValue("amount", 6, true);
-	scenario.SetString("name", "Test6", true);
-	Ex_RegisterScenario(scenario);
-	
-	scenario.SetValue("amount", 7, true);
-	scenario.SetString("name", "Test7", true);
-	Ex_RegisterScenario(scenario);
-	
-	scenario.SetValue("amount", 8, true);
-	scenario.SetString("name", "Test8", true);
-	Ex_RegisterScenario(scenario);
-	
-	scenario.SetValue("amount", 9, true);
-	scenario.SetString("name", "Test9", true);
-	Ex_RegisterScenario(scenario);
-
-	scenario.SetValue("amount", 10, true);
-	scenario.SetString("name", "Test10", true);
-	Ex_RegisterScenario(scenario);
+	StringMap scenario6 = new StringMap();
+	scenario6.SetValue("amount", 6, true);
+	scenario6.SetString("name", "Test6", true);
+	Ex_RegisterScenario(scenario6);
 }
