@@ -81,6 +81,8 @@ int GetScenarioAmount(int iClientAmount)
 		if(smBuffer.GetValue("amount", iTemp))
 			if(iTemp == iClientAmount)
 				iAmount++;
+			else if(iTemp > iClientAmount)
+				return iAmount;
 	}
 	return iAmount;
 }
@@ -166,4 +168,34 @@ stock int IsClientValid(int client)
 		return true;
 	
 	return false;
+}
+
+public int Native_RegisterScenario(Handle plugin, int numParams)
+{
+	StringMap smScenario = GetNativeCell(1);
+	if(smScenario == INVALID_HANDLE)
+		return 0;
+		
+	g_aScenarios.Push(smScenario);
+	SortADTArrayCustom(g_aScenarios, SortScenariosByAmount);
+	return 0;
+}
+
+public int SortScenariosByAmount(int index1, int index2, Handle array, Handle hndl)
+{
+	StringMap scenario1 = view_as<StringMap>(g_aScenarios.Get(index1));
+	StringMap scenario2 = view_as<StringMap>(g_aScenarios.Get(index2));
+	int amount1;
+	int amount2;
+	if(!scenario1.GetValue("amount", amount1))
+		amount1 = -1;
+	if(!scenario2.GetValue("amount", amount2))
+		amount2 = -1;
+	
+	if(amount1 < amount2)
+		return -1;
+	if(amount1 == amount2)
+		return 0;
+		
+	return 1;
 }
