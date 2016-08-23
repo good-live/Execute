@@ -35,7 +35,7 @@ public void OnPluginStart()
 	g_aQueue = new ArrayList(1);
 	HookEvent("round_start", OnRoundStart);
 	
-	LoadTranslations("executes.phrases");
+	LoadTranslations("execute.phrases");
 }
 
 public void OnRoundStart(Event event, const char[] name, bool dontBroadcast)
