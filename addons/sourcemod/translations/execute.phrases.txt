@@ -2,10 +2,14 @@
 {
 	"TAG"
 	{
-		"en"	"[{green}Executes]{default}"
+		"en"	"[{green}Executes]{default} "
 	}
 	"Not enough players"
 	{
 		"en"	"There is {purple}no scenario{default} for the current amount of player."
+	}
+	"You have been added to the game"
+	{
+		"en"	"{purple}You{default} have been added to the game. Have fun!"
 	}
 }

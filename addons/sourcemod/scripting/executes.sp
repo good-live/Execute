@@ -115,6 +115,52 @@ void InitiateRandomScenario(int iAmountQueue)
 	g_smActiveScenario.GetString("name", sName, sizeof(sName));
 	
 	CPrintToChatAll("The Scenario %s has started. %i player/s from the Queue get added to the game.", sName, iAmountQueue);
+	
+	ArrayList aActiveClients = new ArrayList(1);
+	RemoveClientsFromQueue(iAmountQueue);
+	
+	g_bIsActive = true;
+	
+	for (int i = 1; i <= MaxClients; i++)
+	{
+		if(IsClientValid(i) && !IsClientInQueue(i))
+			aActiveClients.Push(i);
+	}
+	
+	SpawnClients(aActiveClients);
+}
+
+void SpawnClients(ArrayList aActiveClients)
+{
+	for (int i = 0; i < aActiveClients.Length; i++)
+	{
+		CPrintToChatAll("[Execute] Spawning now %N", aActiveClients.Get(i));
+	}
+}
+
+bool IsClientInQueue(int client)
+{
+	for (int i = 0; i < g_aQueue.Length; i++)
+	{
+		if(client == GetClientOfUserId(g_aQueue.Get(i)))
+			return true;
+	}
+	return false;
+}
+
+void RemoveClientsFromQueue(int iAmount)
+{
+	for (int i = 0; i < iAmount && i < g_aQueue.Length; i++)
+	{
+		int client = GetClientOfUserId(g_aQueue.Get(i));
+		if(!IsClientValid(client))
+		{
+			g_aQueue.Erase(i--);
+			continue;
+		}
+		CPrintToChat(client, "%t%t", "TAG", "You have been added to the game");
+		g_aQueue.Erase(i);
+	}
 }
 
 stock int IsClientValid(int client)
