@@ -140,11 +140,8 @@ void SpawnClients(ArrayList aActiveClients)
 
 bool IsClientInQueue(int client)
 {
-	for (int i = 0; i < g_aQueue.Length; i++)
-	{
-		if(client == GetClientOfUserId(g_aQueue.Get(i)))
-			return true;
-	}
+	if(g_aQueue.FindValue(client) != -1)
+		return true;
 	return false;
 }
 
