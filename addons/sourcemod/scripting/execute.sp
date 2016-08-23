@@ -41,11 +41,78 @@ public void OnPluginStart()
 	g_aPossibleScenarios = new ArrayList(1);
 	g_aQueue = new ArrayList(1);
 	HookEvent("round_start", OnRoundStart);
+	AddCommandListener(OnJoinTeam, "jointeam");
 }
 
 public void OnRoundStart(Event event, const char[] name, bool dontBroadcast)
 {
 	CalculatePlayers();
+}
+
+public void OnClientPostAdminCheck(int client)
+{
+	AddClientToQueue(client);
+}
+
+public Action OnJoinTeam(int client, const char[] szCommand, int iArgCount)
+{
+	if(iArgCount < 1)
+		return Plugin_Continue;
+
+	char szData[2];
+	GetCmdArg(1, szData, sizeof(szData));
+	int iTeam = StringToInt(szData);
+	
+	if(iTeam !=  CS_TEAM_SPECTATOR && IsClientInQueue(client))
+	{
+		if(g_bIsActive)
+		{
+			CPrintToChat(client, "%t%t", "You are currently in the queue please wait");
+			CS_SwitchTeam(client, CS_TEAM_SPECTATOR);
+			return Plugin_Stop;
+		}else{
+			CreateTimer(0.1, Timer_CalculatePlayers);
+		}
+	}
+	if(iTeam == CS_TEAM_SPECTATOR && !IsClientInQueue(client))
+	{
+		AddClientToQueue(client);
+	}
+	
+	return Plugin_Continue;
+}
+
+public Action Timer_CalculatePlayers(Handle timer)
+{
+	CalculatePlayers();
+	return;
+}
+
+void AddClientToQueue(int client)
+{
+	if(!IsClientInQueue(client))
+	{
+		CPrintToChat(client, "%t%t", "TAG", "You have been added to the queue");
+		g_aQueue.Push(GetClientUserId(client));
+	}
+}
+
+void RemoveClientFromQueue(int client)
+{
+	if(IsClientInQueue(client))
+	{
+		if(IsClientValid(client))
+			CPrintToChat(client, "%t%t", "TAG", "You have been removed from the queue");
+		g_aQueue.Erase(g_aQueue.FindValue(GetClientUserId(client)));
+	}
+}
+
+public void OnClientDisconnect(int client)
+{
+	if(IsClientInQueue(client))
+	{
+		RemoveClientFromQueue(client);
+	}
 }
 
 void CalculatePlayers()
@@ -64,7 +131,7 @@ void CalculatePlayers()
 		if(IsClientConnected(i))
 			CPrintToChat(i, "%t%t", "TAG", "Not enough players");
 	
-	g_bActive = false;
+	g_bIsActive = false;
 }
 
 int GetActivePlayers()
@@ -72,7 +139,7 @@ int GetActivePlayers()
 	int iCounter;
 	for (int i = 1; i <= MaxClients; i++)
 	{
-		if(IsClientValid(i) && GetClientTeam(i) > CS_TEAM_SPECTATOR)
+		if(IsClientValid(i) && GetClientTeam(i) > CS_TEAM_SPECTATOR && !IsClientInQueue(i))
 			iCounter++;
 	}
 	return iCounter;
@@ -131,7 +198,7 @@ void InitiateRandomScenario(int iAmountQueue)
 	
 	for (int i = 1; i <= MaxClients; i++)
 	{
-		if(IsClientValid(i) && !IsClientInQueue(i))
+		if(IsClientValid(i) && !IsClientInQueue(i) && GetClientTeam(i) > CS_TEAM_SPECTATOR)
 			aActiveClients.Push(i);
 	}
 	
@@ -149,7 +216,7 @@ void SpawnClients(ArrayList aActiveClients)
 
 bool IsClientInQueue(int client)
 {
-	if(g_aQueue.FindValue(client) != -1)
+	if(g_aQueue.FindValue(GetClientUserId(client)) != -1)
 		return true;
 	return false;
 }
@@ -179,7 +246,6 @@ stock int IsClientValid(int client)
 
 public int Native_RegisterScenario(Handle plugin, int numParams)
 {
-	
 	StringMap smScenario = GetNativeCell(1);
 	int iAmount;
 	smScenario.GetValue("amount", iAmount);

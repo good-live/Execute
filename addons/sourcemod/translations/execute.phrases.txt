@@ -2,7 +2,7 @@
 {
 	"TAG"
 	{
-		"en"	"[{green}Executes]{default} "
+		"en"	"[{green}Executes{default}] "
 	}
 	"Not enough players"
 	{
@@ -11,5 +11,17 @@
 	"You have been added to the game"
 	{
 		"en"	"{purple}You{default} have been added to the game. Have fun!"
+	}
+	"You are currently in the queue please wait"
+	{
+		"en"	"{purple}You{default} are currently in the queue please wait!"
+	}
+	"You have been added to the queue"
+	{
+		"en"	"{purple}You{default} have been added to the queue!"
+	}
+	"You have been removed from the queue"
+	{
+		"en"	"{purple}You{default} have been removed from the queue!"
 	}
 }
