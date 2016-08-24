@@ -236,6 +236,7 @@ void SpawnClients()
 	int iAmount = 0;
 	char sSpawn[16];
 	StringMap smSpawn;
+	int iTeam;
 	float fPos[3];
 	for (int i = 0; i < g_aActive.Length; i++)
 	{
@@ -267,6 +268,12 @@ void SpawnClients()
 			LogError("The spawn %i is invalid.", i+1);
 			CalculatePlayers();
 			return;
+		}
+		
+		if(smSpawn.GetValue("team", iTeam))
+		{
+			if(GetClientTeam(client) != iTeam)
+				CS_SwitchTeam(client, iTeam);
 		}
 		
 		if(!smSpawn.GetArray("pos", fPos, sizeof(fPos)))
