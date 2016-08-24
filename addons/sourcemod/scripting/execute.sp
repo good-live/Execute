@@ -24,6 +24,7 @@ public Plugin myinfo =
 ArrayList g_aScenarios;
 ArrayList g_aPossibleScenarios;
 ArrayList g_aQueue;
+ArrayList g_aActive;
 
 StringMap g_smActiveScenario;
 
@@ -37,9 +38,12 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 public void OnPluginStart()
 {
 	LoadTranslations("execute.phrases");
+	
 	g_aScenarios = new ArrayList(1);
 	g_aPossibleScenarios = new ArrayList(1);
 	g_aQueue = new ArrayList(1);
+	g_aActive = new ArrayList(1);
+	
 	HookEvent("round_start", OnRoundStart);
 	AddCommandListener(OnJoinTeam, "jointeam");
 }
@@ -47,11 +51,6 @@ public void OnPluginStart()
 public void OnRoundStart(Event event, const char[] name, bool dontBroadcast)
 {
 	CalculatePlayers();
-}
-
-public void OnClientPostAdminCheck(int client)
-{
-	AddClientToQueue(client);
 }
 
 public Action OnJoinTeam(int client, const char[] szCommand, int iArgCount)
@@ -63,20 +62,21 @@ public Action OnJoinTeam(int client, const char[] szCommand, int iArgCount)
 	GetCmdArg(1, szData, sizeof(szData));
 	int iTeam = StringToInt(szData);
 	
-	if(iTeam !=  CS_TEAM_SPECTATOR && IsClientInQueue(client))
+	if(iTeam !=  CS_TEAM_SPECTATOR && !IsClientActive(client))
 	{
 		if(g_bIsActive)
 		{
-			CPrintToChat(client, "%t%t", "You are currently in the queue please wait");
+			AddClientToQueue(client);
 			CS_SwitchTeam(client, CS_TEAM_SPECTATOR);
 			return Plugin_Stop;
 		}else{
+			AddClientToGame(client);
 			CreateTimer(0.1, Timer_CalculatePlayers);
 		}
 	}
-	if(iTeam == CS_TEAM_SPECTATOR && !IsClientInQueue(client))
+	if(iTeam ==  CS_TEAM_SPECTATOR)
 	{
-		AddClientToQueue(client);
+		RemoveClientFromGame(client);
 	}
 	
 	return Plugin_Continue;
@@ -90,6 +90,7 @@ public Action Timer_CalculatePlayers(Handle timer)
 
 void AddClientToQueue(int client)
 {
+	RemoveClientFromGame(client);
 	if(!IsClientInQueue(client))
 	{
 		CPrintToChat(client, "%t%t", "TAG", "You have been added to the queue");
@@ -107,12 +108,46 @@ void RemoveClientFromQueue(int client)
 	}
 }
 
+bool IsClientInQueue(int client)
+{
+	if(g_aQueue.FindValue(GetClientUserId(client)) != -1)
+		return true;
+	return false;
+}
+
+void AddClientToGame(int client)
+{
+	RemoveClientFromQueue(client);
+	if(!IsClientActive(client))
+	{
+		CPrintToChat(client, "%t%t", "TAG", "You have been added to the game");
+		g_aActive.Push(GetClientUserId(client));
+	}
+}
+
+void RemoveClientFromGame(int client)
+{
+	if(IsClientActive(client))
+	{
+		if(IsClientValid(client))
+			CPrintToChat(client, "%t%t", "TAG", "You have been removed from the game");
+		g_aActive.Erase(g_aActive.FindValue(GetClientUserId(client)));
+	}
+}
+
+bool IsClientActive(int client)
+{
+	if(g_aActive.FindValue(GetClientUserId(client)) != -1)
+		return true;
+	return false;
+}
+
+
+
 public void OnClientDisconnect(int client)
 {
-	if(IsClientInQueue(client))
-	{
-		RemoveClientFromQueue(client);
-	}
+	RemoveClientFromQueue(client);
+	RemoveClientFromGame(client);
 }
 
 void CalculatePlayers()
@@ -136,13 +171,7 @@ void CalculatePlayers()
 
 int GetActivePlayers()
 {
-	int iCounter;
-	for (int i = 1; i <= MaxClients; i++)
-	{
-		if(IsClientValid(i) && GetClientTeam(i) > CS_TEAM_SPECTATOR && !IsClientInQueue(i))
-			iCounter++;
-	}
-	return iCounter;
+	return g_aActive.Length;
 }
 int GetScenarioAmount(int iClientAmount)
 {
@@ -191,37 +220,23 @@ void InitiateRandomScenario(int iAmountQueue)
 	
 	CPrintToChatAll("The Scenario %s has started. %i player/s from the Queue get added to the game.", sName, iAmountQueue);
 	
-	ArrayList aActiveClients = new ArrayList(1);
-	RemoveClientsFromQueue(iAmountQueue);
+	AddClientsToGame(iAmountQueue);
 	
 	g_bIsActive = true;
 	
-	for (int i = 1; i <= MaxClients; i++)
-	{
-		if(IsClientValid(i) && !IsClientInQueue(i) && GetClientTeam(i) > CS_TEAM_SPECTATOR)
-			aActiveClients.Push(i);
-	}
-	
-	SpawnClients(aActiveClients);
+	SpawnClients();
 }
 
-void SpawnClients(ArrayList aActiveClients)
+void SpawnClients()
 {
-	for (int i = 1; i < aActiveClients.Length; i++)
+	for (int i = 1; i < g_aActive.Length; i++)
 	{
 		if(IsClientValid(i))
-			CPrintToChatAll("[Execute] Spawning now %N", aActiveClients.Get(i));
+			CPrintToChatAll("[Execute] Spawning now %N", g_aActive.Get(i));
 	}
 }
 
-bool IsClientInQueue(int client)
-{
-	if(g_aQueue.FindValue(GetClientUserId(client)) != -1)
-		return true;
-	return false;
-}
-
-void RemoveClientsFromQueue(int iAmount)
+void AddClientsToGame(int iAmount)
 {
 	for (int i = 0; i < iAmount && i < g_aQueue.Length; i++)
 	{
@@ -231,8 +246,7 @@ void RemoveClientsFromQueue(int iAmount)
 			g_aQueue.Erase(i--);
 			continue;
 		}
-		CPrintToChat(client, "%t%t", "TAG", "You have been added to the game");
-		g_aQueue.Erase(i);
+		AddClientToGame(client);
 	}
 }
 
