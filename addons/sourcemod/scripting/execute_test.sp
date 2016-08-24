@@ -8,6 +8,7 @@
 #include <sourcemod>
 #include <sdktools>
 #include <execute>
+#include <cstrike>
 
 #pragma newdecls required
 
@@ -31,6 +32,7 @@ public void OnMapStart()
 	
 	StringMap spawn1 = new StringMap();
 	spawn1.SetArray("pos", { -245.322753, 1256.592163, 32.031250 }, 3, true);
+	spawn1.SetValue("team", CS_TEAM_T, true);
 	
 	scenario.SetValue("amount", 1, true);
 	scenario.SetString("name", "Test1", true);
@@ -41,11 +43,12 @@ public void OnMapStart()
 	
 	StringMap spawn2 = new StringMap();
 	spawn2.SetArray("pos", { 340.521881, 2427.900390, -126.968750 }, 3, true);
+	spawn2.SetValue("team", CS_TEAM_CT, true);
 	
 	scenario2.SetValue("amount", 2, true);
 	scenario2.SetString("name", "Test2", true);
-	scenario.SetValue("spawn_1", spawn1, true);
-	scenario.SetValue("spawn_2", spawn2, true);
+	scenario2.SetValue("spawn_1", spawn1, true);
+	scenario2.SetValue("spawn_2", spawn2, true);
 	Ex_RegisterScenario(scenario2);
 	
 	StringMap scenario3 = new StringMap();
