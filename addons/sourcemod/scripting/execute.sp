@@ -142,8 +142,6 @@ bool IsClientActive(int client)
 	return false;
 }
 
-
-
 public void OnClientDisconnect(int client)
 {
 	RemoveClientFromQueue(client);
@@ -229,10 +227,52 @@ void InitiateRandomScenario(int iAmountQueue)
 
 void SpawnClients()
 {
-	for (int i = 1; i < g_aActive.Length; i++)
+	int iAmount = 0;
+	char sSpawn[16];
+	StringMap smSpawn;
+	float fPos[3];
+	for (int i = 0; i < g_aActive.Length; i++)
 	{
-		if(IsClientValid(i))
-			CPrintToChatAll("[Execute] Spawning now %N", g_aActive.Get(i));
+		int client = GetClientOfUserId(g_aActive.Get(i));
+		if(!IsClientValid(client))
+		{
+			LogError("A invalid client has been in the active clients List.");
+			g_aActive.Erase(i);
+			CalculatePlayers();
+			return;
+		}
+		
+		Format(sSpawn, sizeof(sSpawn), "spawn_%i", i + 1);
+		
+		if(!g_smActiveScenario.GetValue(sSpawn, smSpawn))
+		{
+			int iAmounts;
+			g_smActiveScenario.GetValue("amount", iAmounts);
+			if(iAmount >= i+1)
+				SetFailState("There is no Spawn number %i defined for a Scenario. Needed Spawns: %i", i + 1, iAmounts);
+			
+			LogError("There are too much clients for the current Scenario. Failed to calculate scenario correctly");
+			CalculatePlayers();
+			return;
+		}
+		
+		if(smSpawn == INVALID_HANDLE)
+		{
+			LogError("The spawn %i is invalid.", i+1);
+			CalculatePlayers();
+			return;
+		}
+		
+		if(!smSpawn.GetArray("pos", fPos, sizeof(fPos)))
+		{
+			LogError("There is no spawning Position for spawn %i.", i+1);
+		}
+		
+		if(!IsPlayerAlive(client))
+			CS_RespawnPlayer(client);
+		
+		TeleportEntity(client, fPos, NULL_VECTOR, NULL_VECTOR);
+		CPrintToChatAll("[Execute] Client %N has been spawned", client);
 	}
 }
 
