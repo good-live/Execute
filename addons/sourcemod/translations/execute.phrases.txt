@@ -12,6 +12,10 @@
 	{
 		"en"	"{purple}You{default} have been added to the game. Have fun!"
 	}
+	"You have been removed from the game"
+	{
+		"en"	"{purple}You{default} have been removed from the game!"
+	}
 	"You are currently in the queue please wait"
 	{
 		"en"	"{purple}You{default} are currently in the queue please wait!"

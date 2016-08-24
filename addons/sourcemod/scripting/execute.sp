@@ -48,6 +48,14 @@ public void OnPluginStart()
 	AddCommandListener(OnJoinTeam, "jointeam");
 }
 
+public void OnMapStart()
+{
+	g_aScenarios.Clear();
+	g_aActive.Clear();
+	g_bIsActive = false;
+	g_aQueue.Clear();
+}
+
 public void OnRoundStart(Event event, const char[] name, bool dontBroadcast)
 {
 	CalculatePlayers();
@@ -67,7 +75,7 @@ public Action OnJoinTeam(int client, const char[] szCommand, int iArgCount)
 		if(g_bIsActive)
 		{
 			AddClientToQueue(client);
-			CS_SwitchTeam(client, CS_TEAM_SPECTATOR);
+			ChangeClientTeam(client, CS_TEAM_SPECTATOR);
 			return Plugin_Stop;
 		}else{
 			AddClientToGame(client);
@@ -150,6 +158,7 @@ public void OnClientDisconnect(int client)
 
 void CalculatePlayers()
 {
+	g_bIsActive = true;
 	int iActivePlayers = GetActivePlayers();
 	for (int i = g_aQueue.Length; i >= 0; i--)
 	{
@@ -164,6 +173,7 @@ void CalculatePlayers()
 		if(IsClientConnected(i))
 			CPrintToChat(i, "%t%t", "TAG", "Not enough players");
 	
+	CPrintToChatAll("Setting Game to inactive!");
 	g_bIsActive = false;
 }
 
@@ -209,8 +219,6 @@ void InitiateRandomScenario(int iAmountQueue)
 	
 	iIndex = GetRandomInt(0, g_aPossibleScenarios.Length - 1);
 	
-	g_bIsActive = false;
-	
 	g_smActiveScenario = view_as<StringMap>(g_aPossibleScenarios.Get(iIndex));
 	
 	char sName[64];
@@ -219,8 +227,6 @@ void InitiateRandomScenario(int iAmountQueue)
 	CPrintToChatAll("The Scenario %s has started. %i player/s from the Queue get added to the game.", sName, iAmountQueue);
 	
 	AddClientsToGame(iAmountQueue);
-	
-	g_bIsActive = true;
 	
 	SpawnClients();
 }
@@ -272,7 +278,7 @@ void SpawnClients()
 			CS_RespawnPlayer(client);
 		
 		TeleportEntity(client, fPos, NULL_VECTOR, NULL_VECTOR);
-		CPrintToChatAll("[Execute] Client %N has been spawned", client);
+		CPrintToChatAll("[Execute] Client %N has been spawned at Positon: %f %f %f", client, fPos[0], fPos[1], fPos[2]);
 	}
 }
 
