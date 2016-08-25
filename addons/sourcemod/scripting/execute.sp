@@ -11,11 +11,13 @@
 #include <multicolors>
 #include <clientprefs>
 
+#include "execute/execute_queue.sp"
+
 #pragma newdecls required
 
 public Plugin myinfo = 
 {
-	name = "Executes",
+	name = "Execute",
 	author = PLUGIN_AUTHOR,
 	description = "Play a randomized competetive Scenario.",
 	version = PLUGIN_VERSION,
@@ -24,8 +26,6 @@ public Plugin myinfo =
 
 ArrayList g_aScenarios;
 ArrayList g_aPossibleScenarios;
-ArrayList g_aQueue;
-ArrayList g_aActive;
 
 bool g_bUseM4[MAXPLAYERS + 1];
 bool g_bIsActive;
@@ -45,8 +45,6 @@ public void OnPluginStart()
 	
 	g_aScenarios = new ArrayList(1);
 	g_aPossibleScenarios = new ArrayList(1);
-	g_aQueue = new ArrayList(1);
-	g_aActive = new ArrayList(1);
 	
 	//Cookie LateLoading
 	for (int i = 1; i <= MaxClients; i++)
@@ -58,6 +56,8 @@ public void OnPluginStart()
         
         OnClientCookiesCached(i);
     }
+	
+	Queue_OnPluginStart();
 	
 	HookEvent("round_start", OnRoundStart);
 	AddCommandListener(OnJoinTeam, "jointeam");
@@ -134,60 +134,6 @@ public Action Timer_CalculatePlayers(Handle timer)
 	return;
 }
 
-void AddClientToQueue(int client)
-{
-	RemoveClientFromGame(client);
-	if(!IsClientInQueue(client))
-	{
-		CPrintToChat(client, "%t%t", "TAG", "You have been added to the queue");
-		g_aQueue.Push(GetClientUserId(client));
-	}
-}
-
-void RemoveClientFromQueue(int client)
-{
-	if(IsClientInQueue(client))
-	{
-		if(IsClientValid(client))
-			CPrintToChat(client, "%t%t", "TAG", "You have been removed from the queue");
-		g_aQueue.Erase(g_aQueue.FindValue(GetClientUserId(client)));
-	}
-}
-
-bool IsClientInQueue(int client)
-{
-	if(g_aQueue.FindValue(GetClientUserId(client)) != -1)
-		return true;
-	return false;
-}
-
-void AddClientToGame(int client)
-{
-	RemoveClientFromQueue(client);
-	if(!IsClientActive(client))
-	{
-		CPrintToChat(client, "%t%t", "TAG", "You have been added to the game");
-		g_aActive.Push(GetClientUserId(client));
-	}
-}
-
-void RemoveClientFromGame(int client)
-{
-	if(IsClientActive(client))
-	{
-		if(IsClientValid(client))
-			CPrintToChat(client, "%t%t", "TAG", "You have been removed from the game");
-		g_aActive.Erase(g_aActive.FindValue(GetClientUserId(client)));
-	}
-}
-
-bool IsClientActive(int client)
-{
-	if(g_aActive.FindValue(GetClientUserId(client)) != -1)
-		return true;
-	return false;
-}
-
 void CalculatePlayers()
 {
 	g_bIsActive = true;
@@ -209,10 +155,6 @@ void CalculatePlayers()
 	g_bIsActive = false;
 }
 
-int GetActivePlayers()
-{
-	return g_aActive.Length;
-}
 int GetScenarioAmount(int iClientAmount)
 {
 	int iAmount = 0;
@@ -339,20 +281,6 @@ void AssignWeapons(int client, StringMap smActiveScenario)
 		}else{
 			GivePlayerItem(client, sPrimary);
 		}
-	}
-}
-
-void AddClientsToGame(int iAmount)
-{
-	for (int i = 0; i < iAmount && i < g_aQueue.Length; i++)
-	{
-		int client = GetClientOfUserId(g_aQueue.Get(i));
-		if(!IsClientValid(client))
-		{
-			g_aQueue.Erase(i--);
-			continue;
-		}
-		AddClientToGame(client);
 	}
 }
 
