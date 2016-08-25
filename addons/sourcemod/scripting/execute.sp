@@ -63,17 +63,17 @@ public void OnPluginStart()
 	AddCommandListener(OnJoinTeam, "jointeam");
 }
 
+public void OnRoundStart(Event event, const char[] name, bool dontBroadcast)
+{
+	CalculatePlayers();
+}
+
 public void OnClientCookiesCached(int client)
 {
     char sValue[8];
     GetClientCookie(client, g_hM4Cookie, sValue, sizeof(sValue));
     
     g_bUseM4[client] = (sValue[0] != '\0' && StringToInt(sValue));
-}  
-
-public void OnRoundStart(Event event, const char[] name, bool dontBroadcast)
-{
-	CalculatePlayers();
 }
 
 public Action OnJoinTeam(int client, const char[] szCommand, int iArgCount)
@@ -103,6 +103,29 @@ public Action OnJoinTeam(int client, const char[] szCommand, int iArgCount)
 	}
 	
 	return Plugin_Continue;
+}
+
+public void OnClientDisconnect(int client)
+{
+	RemoveClientFromQueue(client);
+	RemoveClientFromGame(client);
+}
+
+public void OnMapEnd()
+{
+	for (int i = 0; i < g_aScenarios.Length; i++)
+	{
+		StringMap smTemp = g_aScenarios.Get(i);
+		if(smTemp != INVALID_HANDLE)
+		{
+			CloseHandle(smTemp);
+		}
+	}
+	
+	g_aScenarios.Clear();
+	g_aActive.Clear();
+	g_bIsActive = false;
+	g_aQueue.Clear();
 }
 
 public Action Timer_CalculatePlayers(Handle timer)
@@ -165,12 +188,6 @@ bool IsClientActive(int client)
 	return false;
 }
 
-public void OnClientDisconnect(int client)
-{
-	RemoveClientFromQueue(client);
-	RemoveClientFromGame(client);
-}
-
 void CalculatePlayers()
 {
 	g_bIsActive = true;
@@ -227,7 +244,6 @@ void LoadPossibleScenarios(int iClientAmount)
 
 void InitiateRandomScenario(int iAmountQueue)
 {
-	
 	int iIndex;
 	
 	SetRandomSeed(GetTime());
@@ -314,7 +330,7 @@ void AssignWeapons(int client, StringMap smActiveScenario)
 	char sPrimary[32];
 	if(smActiveScenario.GetString("primary", sPrimary, sizeof(sPrimary)))
 	{
-		if(StrEqual(sPrimary, "m4", false))
+		if(StrEqual(sPrimary, "weapon_m4a1", false) || StrEqual(sPrimary, "weapon_m4a1_silencer", false))
 		{
 			if(g_bUseM4[client])
 				GivePlayerItem(client, "weapon_m4a1");
@@ -324,23 +340,6 @@ void AssignWeapons(int client, StringMap smActiveScenario)
 			GivePlayerItem(client, sPrimary);
 		}
 	}
-}
-
-stock void StripWeapons(int client) 
-{  
-	for(int i = CS_SLOT_PRIMARY; i <= CS_SLOT_C4; i++)
-	{
-		int iCurrent = GetPlayerWeaponSlot(client, i);
-		if(iCurrent != INVALID_ENT_REFERENCE && IsValidEdict(iCurrent))
-		{
-			RemovePlayerItem(client, iCurrent);
-			RemoveEdict(iCurrent);
-		}
-	}
-	
-	int entity = GivePlayerItem(client, "weapon_knife");
-	if(entity == INVALID_ENT_REFERENCE || !IsValidEdict(entity))
-		return;
 }
 
 void AddClientsToGame(int iAmount)
@@ -357,7 +356,24 @@ void AddClientsToGame(int iAmount)
 	}
 }
 
-stock int IsClientValid(int client)
+void StripWeapons(int client) 
+{  
+	for(int i = CS_SLOT_PRIMARY; i <= CS_SLOT_C4; i++)
+	{
+		int iCurrent = GetPlayerWeaponSlot(client, i);
+		if(iCurrent != INVALID_ENT_REFERENCE && IsValidEdict(iCurrent))
+		{
+			RemovePlayerItem(client, iCurrent);
+			RemoveEdict(iCurrent);
+		}
+	}
+	
+	int entity = GivePlayerItem(client, "weapon_knife");
+	if(entity == INVALID_ENT_REFERENCE || !IsValidEdict(entity))
+		return;
+}
+
+int IsClientValid(int client)
 {
 	if(0 < client <= MaxClients && IsClientConnected(client))
 		return true;
@@ -376,21 +392,4 @@ public int Native_RegisterScenario(Handle plugin, int numParams)
 		
 	g_aScenarios.Push(smScenario);
 	return 0;
-}
-
-public void OnMapEnd()
-{
-	for (int i = 0; i < g_aScenarios.Length; i++)
-	{
-		StringMap smTemp = g_aScenarios.Get(i);
-		if(smTemp != INVALID_HANDLE)
-		{
-			CloseHandle(smTemp);
-		}
-	}
-	
-	g_aScenarios.Clear();
-	g_aActive.Clear();
-	g_bIsActive = false;
-	g_aQueue.Clear();
 }
