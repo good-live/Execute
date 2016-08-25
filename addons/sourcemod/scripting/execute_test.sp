@@ -14,10 +14,10 @@
 
 public Plugin myinfo = 
 {
-	name = "Execute - Test",
-	author = PLUGIN_AUTHOR,
-	description = "Registers some Test scenarios for Execute.",
-	version = PLUGIN_VERSION,
+	name = "Execute - Test", 
+	author = PLUGIN_AUTHOR, 
+	description = "Registers some Test scenarios for Execute.", 
+	version = PLUGIN_VERSION, 
 	url = ""
 };
 
@@ -33,6 +33,7 @@ public void OnMapStart()
 	StringMap spawn1 = new StringMap();
 	spawn1.SetArray("pos", { -245.322753, 1256.592163, 32.031250 }, 3, true);
 	spawn1.SetValue("team", CS_TEAM_T, true);
+	spawn1.SetString("primary", "weapon_ak47");
 	
 	scenario.SetValue("amount", 1, true);
 	scenario.SetString("name", "Test1", true);
@@ -44,6 +45,7 @@ public void OnMapStart()
 	StringMap spawn2 = new StringMap();
 	spawn2.SetArray("pos", { 340.521881, 2427.900390, -126.968750 }, 3, true);
 	spawn2.SetValue("team", CS_TEAM_CT, true);
+	spawn2.SetString("primary", "weapon_m4a1");
 	
 	scenario2.SetValue("amount", 2, true);
 	scenario2.SetString("name", "Test2", true);
@@ -70,4 +72,4 @@ public void OnMapStart()
 	scenario6.SetValue("amount", 6, true);
 	scenario6.SetString("name", "Test6", true);
 	Ex_RegisterScenario(scenario6);
-}
+} 
