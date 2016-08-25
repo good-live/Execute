@@ -9,6 +9,7 @@
 #include <sdktools>
 #include <cstrike>
 #include <multicolors>
+#include <clientprefs>
 
 #pragma newdecls required
 
@@ -62,10 +63,10 @@ public void OnPluginStart()
 	AddCommandListener(OnJoinTeam, "jointeam");
 }
 
-public OnClientCookiesCached(client)
+public void OnClientCookiesCached(int client)
 {
     char sValue[8];
-    GetClientCookie(client, g_hClientCookie, sValue, sizeof(sValue));
+    GetClientCookie(client, g_hM4Cookie, sValue, sizeof(sValue));
     
     g_bUseM4[client] = (sValue[0] != '\0' && StringToInt(sValue));
 }  
@@ -302,7 +303,7 @@ void SpawnClients(StringMap smActiveScenario)
 		TeleportEntity(client, fPos, NULL_VECTOR, NULL_VECTOR);
 		CPrintToChatAll("[Execute] Client %N has been spawned at Positon: %f %f %f", client, fPos[0], fPos[1], fPos[2]);
 		
-		AssignWeapons(client, smActiveScenario);
+		AssignWeapons(client, smSpawn);
 	}
 }
 
@@ -325,23 +326,22 @@ void AssignWeapons(int client, StringMap smActiveScenario)
 	}
 }
 
-stock StripWeapons(int client) 
+stock void StripWeapons(int client) 
 {  
-	for(int i = CS_SLOT_PRIMARY; i <= CS_SLOT_C4; i++) 
-	{ 
-		int iCurrent = GetPlayerWeaponSlot (client, j); 
+	for(int i = CS_SLOT_PRIMARY; i <= CS_SLOT_C4; i++)
+	{
+		int iCurrent = GetPlayerWeaponSlot(client, i);
 		if(iCurrent != INVALID_ENT_REFERENCE && IsValidEdict(iCurrent))
 		{
-			RemovePlayerItem(client, iCurrent); 
-		    RemoveEdict(iCurrent); 
+			RemovePlayerItem(client, iCurrent);
+			RemoveEdict(iCurrent);
 		}
 	}
-     
-	int entity = GivePlayerItem(client, "weapon_knife"); 
-	if(entity == INVALID_ENT_REFERENCE || !IsValidEdict(entity)) 
-		return; 
-     
-}  
+	
+	int entity = GivePlayerItem(client, "weapon_knife");
+	if(entity == INVALID_ENT_REFERENCE || !IsValidEdict(entity))
+		return;
+}
 
 void AddClientsToGame(int iAmount)
 {
