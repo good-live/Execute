@@ -26,13 +26,16 @@ ArrayList g_aPossibleScenarios;
 ArrayList g_aQueue;
 ArrayList g_aActive;
 
-StringMap g_smActiveScenario;
-
+bool g_bUseM4[MAXPLAYERS + 1];
 bool g_bIsActive;
+
+Handle g_hM4Cookie;
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
 	CreateNative("Ex_RegisterScenario", Native_RegisterScenario);
+	//TODO Chane Cokkie Access when everything is working fine. This is just for debug reasons readable.
+	g_hM4Cookie = RegClientCookie("M4A1S", "Whether you wanna use the M4A1S or just the M4", CookieAccess_Protected); 
 }
 
 public void OnPluginStart()
@@ -44,17 +47,28 @@ public void OnPluginStart()
 	g_aQueue = new ArrayList(1);
 	g_aActive = new ArrayList(1);
 	
+	//Cookie LateLoading
+	for (int i = 1; i <= MaxClients; i++)
+    {
+        if (!AreClientCookiesCached(i))
+        {
+            continue;
+        }
+        
+        OnClientCookiesCached(i);
+    }
+	
 	HookEvent("round_start", OnRoundStart);
 	AddCommandListener(OnJoinTeam, "jointeam");
 }
 
-public void OnMapStart()
+public OnClientCookiesCached(client)
 {
-	g_aScenarios.Clear();
-	g_aActive.Clear();
-	g_bIsActive = false;
-	g_aQueue.Clear();
-}
+    char sValue[8];
+    GetClientCookie(client, g_hClientCookie, sValue, sizeof(sValue));
+    
+    g_bUseM4[client] = (sValue[0] != '\0' && StringToInt(sValue));
+}  
 
 public void OnRoundStart(Event event, const char[] name, bool dontBroadcast)
 {
@@ -219,19 +233,19 @@ void InitiateRandomScenario(int iAmountQueue)
 	
 	iIndex = GetRandomInt(0, g_aPossibleScenarios.Length - 1);
 	
-	g_smActiveScenario = view_as<StringMap>(g_aPossibleScenarios.Get(iIndex));
+	StringMap smActiveScenario = view_as<StringMap>(g_aPossibleScenarios.Get(iIndex));
 	
 	char sName[64];
-	g_smActiveScenario.GetString("name", sName, sizeof(sName));
+	smActiveScenario.GetString("name", sName, sizeof(sName));
 	
 	CPrintToChatAll("The Scenario %s has started. %i player/s from the Queue get added to the game.", sName, iAmountQueue);
 	
 	AddClientsToGame(iAmountQueue);
 	
-	SpawnClients();
+	SpawnClients(smActiveScenario);
 }
 
-void SpawnClients()
+void SpawnClients(StringMap smActiveScenario)
 {
 	int iAmount = 0;
 	char sSpawn[16];
@@ -251,14 +265,15 @@ void SpawnClients()
 		
 		Format(sSpawn, sizeof(sSpawn), "spawn_%i", i + 1);
 		
-		if(!g_smActiveScenario.GetValue(sSpawn, smSpawn))
+		if(!smActiveScenario.GetValue(sSpawn, smSpawn))
 		{
 			int iAmounts;
-			g_smActiveScenario.GetValue("amount", iAmounts);
+			smActiveScenario.GetValue("amount", iAmounts);
+			
 			if(iAmount >= i+1)
 				SetFailState("There is no Spawn number %i defined for a Scenario. Needed Spawns: %i", i + 1, iAmounts);
 			
-			LogError("There are too much clients for the current Scenario. Failed to calculate scenario correctly");
+			LogError("There are too much clients for the current Scenario. Failed to calculate scenario correctly. Calculating again ...");
 			CalculatePlayers();
 			return;
 		}
@@ -286,8 +301,47 @@ void SpawnClients()
 		
 		TeleportEntity(client, fPos, NULL_VECTOR, NULL_VECTOR);
 		CPrintToChatAll("[Execute] Client %N has been spawned at Positon: %f %f %f", client, fPos[0], fPos[1], fPos[2]);
+		
+		AssignWeapons(client, smActiveScenario);
 	}
 }
+
+void AssignWeapons(int client, StringMap smActiveScenario)
+{
+	StripWeapons(client);
+	
+	char sPrimary[32];
+	if(smActiveScenario.GetString("primary", sPrimary, sizeof(sPrimary)))
+	{
+		if(StrEqual(sPrimary, "m4", false))
+		{
+			if(g_bUseM4[client])
+				GivePlayerItem(client, "weapon_m4a1");
+			else
+				GivePlayerItem(client, "weapon_m4a1_silencer");
+		}else{
+			GivePlayerItem(client, sPrimary);
+		}
+	}
+}
+
+stock StripWeapons(int client) 
+{  
+	for(int i = CS_SLOT_PRIMARY; i <= CS_SLOT_C4; i++) 
+	{ 
+		int iCurrent = GetPlayerWeaponSlot (client, j); 
+		if(iCurrent != INVALID_ENT_REFERENCE && IsValidEdict(iCurrent))
+		{
+			RemovePlayerItem(client, iCurrent); 
+		    RemoveEdict(iCurrent); 
+		}
+	}
+     
+	int entity = GivePlayerItem(client, "weapon_knife"); 
+	if(entity == INVALID_ENT_REFERENCE || !IsValidEdict(entity)) 
+		return; 
+     
+}  
 
 void AddClientsToGame(int iAmount)
 {
@@ -322,4 +376,21 @@ public int Native_RegisterScenario(Handle plugin, int numParams)
 		
 	g_aScenarios.Push(smScenario);
 	return 0;
+}
+
+public void OnMapEnd()
+{
+	for (int i = 0; i < g_aScenarios.Length; i++)
+	{
+		StringMap smTemp = g_aScenarios.Get(i);
+		if(smTemp != INVALID_HANDLE)
+		{
+			CloseHandle(smTemp);
+		}
+	}
+	
+	g_aScenarios.Clear();
+	g_aActive.Clear();
+	g_bIsActive = false;
+	g_aQueue.Clear();
 }
