@@ -61,6 +61,12 @@ public void OnPluginStart()
 	
 	HookEvent("round_start", OnRoundStart);
 	AddCommandListener(OnJoinTeam, "jointeam");
+	RegConsoleCmd("sm_guns", Command_Guns, "Choose your favorite gun.");
+}
+
+public Action Command_Guns(int client, int args)
+{
+	CPrintToChat(client, "The guns menu is not implemented yet. Please be patient.");
 }
 
 public void OnRoundStart(Event event, const char[] name, bool dontBroadcast)
