@@ -1,0 +1,23 @@
+"Phrases"
+{
+	"Gun_Menu_Title"
+	{
+		"en"	"Gun Preferences"
+	}
+	"Gun_Menu_M4_No"
+	{
+		"en"	"Use M4A1-S"
+	}
+	"Gun_Menu_M4_Yes"
+	{
+		"en"	"Use M4A1"
+	}
+	"You stopped using M4A1"
+	{
+		"en"	"{purple}You{default} are playing now with the M4A1-S!"
+	}
+	"You started using M4A1"
+	{
+		"en"	"{purple}You{default} are playing now with the M4A1!"
+	}
+}

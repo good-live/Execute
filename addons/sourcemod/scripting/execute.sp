@@ -12,6 +12,7 @@
 #include <clientprefs>
 
 #include "execute/execute_queue.sp"
+#include "execute/execute_guns.sp"
 
 #pragma newdecls required
 
@@ -27,16 +28,11 @@ public Plugin myinfo =
 ArrayList g_aScenarios;
 ArrayList g_aPossibleScenarios;
 
-bool g_bUseM4[MAXPLAYERS + 1];
 bool g_bIsActive;
-
-Handle g_hM4Cookie;
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
-	CreateNative("Ex_RegisterScenario", Native_RegisterScenario);
-	//TODO Chane Cokkie Access when everything is working fine. This is just for debug reasons readable.
-	g_hM4Cookie = RegClientCookie("M4A1S", "Whether you wanna use the M4A1S or just the M4", CookieAccess_Protected); 
+	CreateNative("Ex_RegisterScenario", Native_RegisterScenario); 
 }
 
 public void OnPluginStart()
@@ -46,40 +42,16 @@ public void OnPluginStart()
 	g_aScenarios = new ArrayList(1);
 	g_aPossibleScenarios = new ArrayList(1);
 	
-	//Cookie LateLoading
-	for (int i = 1; i <= MaxClients; i++)
-    {
-        if (!AreClientCookiesCached(i))
-        {
-            continue;
-        }
-        
-        OnClientCookiesCached(i);
-    }
-	
 	Queue_OnPluginStart();
+	Guns_OnPluginStart();
 	
 	HookEvent("round_start", OnRoundStart);
 	AddCommandListener(OnJoinTeam, "jointeam");
-	RegConsoleCmd("sm_guns", Command_Guns, "Choose your favorite gun.");
-}
-
-public Action Command_Guns(int client, int args)
-{
-	CPrintToChat(client, "The guns menu is not implemented yet. Please be patient.");
 }
 
 public void OnRoundStart(Event event, const char[] name, bool dontBroadcast)
 {
 	CalculatePlayers();
-}
-
-public void OnClientCookiesCached(int client)
-{
-    char sValue[8];
-    GetClientCookie(client, g_hM4Cookie, sValue, sizeof(sValue));
-    
-    g_bUseM4[client] = (sValue[0] != '\0' && StringToInt(sValue));
 }
 
 public Action OnJoinTeam(int client, const char[] szCommand, int iArgCount)
@@ -323,7 +295,7 @@ public int Native_RegisterScenario(Handle plugin, int numParams)
 	CPrintToChatAll("Adding a new scenario for %i players", iAmount );
 	if(smScenario == INVALID_HANDLE)
 		return 0;
-		
+	
 	g_aScenarios.Push(smScenario);
 	return 0;
 }
