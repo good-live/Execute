@@ -101,9 +101,9 @@ public void OnMapEnd()
 			smTemp.GetValue("spawns", aSpawns);
 			if(aSpawns != INVALID_HANDLE)
 			{
-				for (int i = 0; i < aSpawns.Length; i++)
+				for (int j = 0; j < aSpawns.Length; j++)
 				{
-					StringMap smTemp2 = aSpawns.Get(i);
+					StringMap smTemp2 = aSpawns.Get(j);
 					if(smTemp2 != INVALID_HANDLE)
 						CloseHandle(smTemp2);
 				}
@@ -197,8 +197,6 @@ void InitiateRandomScenario(int iAmountQueue)
 
 void SpawnClients(StringMap smActiveScenario)
 {
-	int iAmount = 0;
-	char sSpawn[16];
 	StringMap smSpawn;
 	int iRand;
 	int iTeam;
@@ -224,8 +222,8 @@ void SpawnClients(StringMap smActiveScenario)
 		if(g_aActive.Length == 0)
 			break;
 		
-		iRand = GetRandomInt(0, g_aActive.Length - 1)
-		int client = GetClientOfUserId(g_aActive.Get(iRand);
+		iRand = GetRandomInt(0, g_aActive.Length - 1);
+		int client = GetClientOfUserId(g_aActive.Get(iRand));
 		if(!IsClientValid(client))
 		{
 			LogError("A invalid client has been in the active clients List.");
