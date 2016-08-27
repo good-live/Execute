@@ -217,17 +217,20 @@ void SpawnClients(StringMap smActiveScenario)
 		return;
 	}
 	
+	ArrayList aActive = g_aActive.Clone();
+	
 	for (int i = 0; i < aSpawns.Length; i++)
 	{
-		if(g_aActive.Length == 0)
+		if(aActive.Length == 0)
 			break;
 		
-		iRand = GetRandomInt(0, g_aActive.Length - 1);
-		int client = GetClientOfUserId(g_aActive.Get(iRand));
+		iRand = GetRandomInt(0, aActive.Length - 1);
+		int client = GetClientOfUserId(aActive.Get(iRand));
+		aActive.Erase(iRand);
+		
 		if(!IsClientValid(client))
 		{
 			LogError("A invalid client has been in the active clients List.");
-			g_aActive.Erase(iRand);
 			CalculatePlayers();
 			return;
 		}
@@ -258,6 +261,8 @@ void SpawnClients(StringMap smActiveScenario)
 		
 		TeleportEntity(client, fPos, NULL_VECTOR, NULL_VECTOR);
 		CPrintToChatAll("[Execute] Client %N has been spawned at Positon: %f %f %f", client, fPos[0], fPos[1], fPos[2]);
+		
+		CS_UpdateClientModel(client);
 		
 		AssignWeapons(client, smSpawn);
 	}
