@@ -91,11 +91,24 @@ public void OnClientDisconnect(int client)
 
 public void OnMapEnd()
 {
+	//Close registered Handles to prevent a memory leak
 	for (int i = 0; i < g_aScenarios.Length; i++)
 	{
 		StringMap smTemp = g_aScenarios.Get(i);
 		if(smTemp != INVALID_HANDLE)
 		{
+			ArrayList aSpawns;
+			smTemp.GetValue("spawns", aSpawns);
+			if(aSpawns != INVALID_HANDLE)
+			{
+				for (int i = 0; i < aSpawns.Length; i++)
+				{
+					StringMap smTemp2 = aSpawns.Get(i);
+					if(smTemp2 != INVALID_HANDLE)
+						CloseHandle(smTemp2);
+				}
+				CloseHandle(aSpawns);
+			}
 			CloseHandle(smTemp);
 		}
 	}
@@ -187,37 +200,46 @@ void SpawnClients(StringMap smActiveScenario)
 	int iAmount = 0;
 	char sSpawn[16];
 	StringMap smSpawn;
+	int iRand;
 	int iTeam;
 	float fPos[3];
-	for (int i = 0; i < g_aActive.Length; i++)
+	
+	ArrayList aSpawns;
+	if(!smActiveScenario.GetValue("spawns", aSpawns) || aSpawns == INVALID_HANDLE)
 	{
-		int client = GetClientOfUserId(g_aActive.Get(i));
+		LogError("The current Scenario has no spawns :/");
+		CalculatePlayers();
+		return;
+	}
+	
+	if(g_aActive.Length > aSpawns.Length)
+	{
+		LogError("There aren't enough spawns for all active clients. Is the amount property set right?");
+		CalculatePlayers();
+		return;
+	}
+	
+	for (int i = 0; i < aSpawns.Length; i++)
+	{
+		if(g_aActive.Length == 0)
+			break;
+		
+		iRand = GetRandomInt(0, g_aActive.Length - 1)
+		int client = GetClientOfUserId(g_aActive.Get(iRand);
 		if(!IsClientValid(client))
 		{
 			LogError("A invalid client has been in the active clients List.");
-			g_aActive.Erase(i);
+			g_aActive.Erase(iRand);
 			CalculatePlayers();
 			return;
 		}
 		
-		Format(sSpawn, sizeof(sSpawn), "spawn_%i", i + 1);
-		
-		if(!smActiveScenario.GetValue(sSpawn, smSpawn))
-		{
-			int iAmounts;
-			smActiveScenario.GetValue("amount", iAmounts);
-			
-			if(iAmount >= i+1)
-				SetFailState("There is no Spawn number %i defined for a Scenario. Needed Spawns: %i", i + 1, iAmounts);
-			
-			LogError("There are too much clients for the current Scenario. Failed to calculate scenario correctly. Calculating again ...");
-			CalculatePlayers();
-			return;
-		}
+		smSpawn = aSpawns.Get(i);
 		
 		if(smSpawn == INVALID_HANDLE)
 		{
 			LogError("The spawn %i is invalid.", i+1);
+			aSpawns.Erase(i);
 			CalculatePlayers();
 			return;
 		}
