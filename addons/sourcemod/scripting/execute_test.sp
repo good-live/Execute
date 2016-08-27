@@ -18,7 +18,7 @@ public Plugin myinfo =
 	author = PLUGIN_AUTHOR, 
 	description = "Registers some Test scenarios for Execute.", 
 	version = PLUGIN_VERSION, 
-	url = ""
+	url = "painlessgaming.eu"
 };
 
 public void OnPluginStart()
@@ -35,7 +35,7 @@ public void OnMapStart()
 	spawn1.SetValue("team", CS_TEAM_T, true);
 	spawn1.SetString("primary", "weapon_ak47");
 	ArrayList aSpawns = new ArrayList(1);
-	aSpawns2.Push(spawn1);
+	aSpawns.Push(spawn1);
 	
 	scenario.SetValue("amount", 1, true);
 	scenario.SetString("name", "Test1", true);
