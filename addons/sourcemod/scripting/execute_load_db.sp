@@ -7,6 +7,7 @@
 
 #include <sourcemod>
 #include <sdktools>
+#include <execute>
 
 #pragma newdecls required
 
@@ -92,6 +93,9 @@ public void DB_LoadScenarios_Callback(Database db, DBResultSet results, const ch
 	int iIndex = -1;
 	char sName[32];
 	char sDesc[64];
+	int iTeam;
+	float fPos[3];
+	char sPrimary[32];
 	
 	while(results.FetchRow())
 	{
@@ -107,6 +111,30 @@ public void DB_LoadScenarios_Callback(Database db, DBResultSet results, const ch
 			smScenario.SetValue("amount", results.FetchInt(3), false);
 			iIndex = aScenarios.Push(smScenario);
 			aScenarioId.Push(iID);
-		}	
+		}
+		
+		StringMap smScenario = view_as<StringMap>(aScenarios.Get(iIndex));
+		StringMap smSpawn = new StringMap();
+		ArrayList aSpawns;
+		if(!smScenario.GetValue("spawns", aSpawns))
+		{
+			aSpawns = new ArrayList(1);
+		}
+		
+		iTeam = results.FetchInt(4);
+		smSpawn.SetValue("team", iTeam, false);
+		results.FetchString(5, sPrimary, sizeof(sPrimary));
+		smSpawn.SetString("primary", sPrimary, false);
+		fPos[0] = results.FetchFloat(6);
+		fPos[1] = results.FetchFloat(7);
+		fPos[2] = results.FetchFloat(8);
+		smSpawn.SetArray("pos", fPos, 3, false);
+		aSpawns.Push(smSpawn);
+		smScenario.SetValue("spawns", aSpawns, true);
+	}
+	
+	for (int i = 0; i < aScenarios.Length; i++)
+	{
+		Ex_RegisterScenario(aScenarios.Get(i));
 	}
 }
