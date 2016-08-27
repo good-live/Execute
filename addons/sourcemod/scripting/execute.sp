@@ -11,8 +11,7 @@
 #include <multicolors>
 #include <clientprefs>
 
-#include "execute/execute_queue.sp"
-#include "execute/execute_guns.sp"
+
 
 #pragma newdecls required
 
@@ -30,6 +29,14 @@ ArrayList g_aPossibleScenarios;
 
 bool g_bIsActive;
 
+ConVar g_cRatio;
+ConVar g_cSwitchCT;
+ConVar g_cTeamBalance;
+ConVar g_cTeamScramble;
+
+#include "execute/execute_queue.sp"
+#include "execute/execute_guns.sp"
+
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
 	CreateNative("Ex_RegisterScenario", Native_RegisterScenario); 
@@ -42,11 +49,19 @@ public void OnPluginStart()
 	g_aScenarios = new ArrayList(1);
 	g_aPossibleScenarios = new ArrayList(1);
 	
-	Queue_OnPluginStart();
 	Guns_OnPluginStart();
+	
+	g_cTeamBalance = CreateConVar("execute_team_balance", "1", "Shall Execute balance the teams?");
+	g_cTeamScramble = CreateConVar("execute_scramble_rounds", "5", "The rounds after which the teams are completely scrambled");
+	g_cRatio = CreateConVar("execute_team_ratio", "0.425", "The team balance ratio");
+	g_cSwitchCT = CreateConVar("execute_switch_ct_on_lose", "1", "Switch the CT's to T when they lose");
+	
+	Queue_OnPluginStart();
 	
 	HookEvent("round_start", OnRoundStart);
 	AddCommandListener(OnJoinTeam, "jointeam");
+	
+	AutoExecConfig(true);
 }
 
 public void OnRoundStart(Event event, const char[] name, bool dontBroadcast)
@@ -114,7 +129,8 @@ public void OnMapEnd()
 	}
 	
 	g_aScenarios.Clear();
-	g_aActive.Clear();
+	g_aActiveT.Clear();
+	g_aActiveCT.Clear();
 	g_bIsActive = false;
 	g_aQueue.Clear();
 }
@@ -192,32 +208,47 @@ void InitiateRandomScenario(int iAmountQueue)
 	
 	AddClientsToGame(iAmountQueue);
 	
-	SpawnClients(smActiveScenario);
+	if(g_cTeamBalance.BoolValue)
+		CheckTeamBalance();
+	
+	SpawnClients(smActiveScenario, CS_TEAM_T);
+	SpawnClients(smActiveScenario, CS_TEAM_CT);
 }
 
-void SpawnClients(StringMap smActiveScenario)
-{
+void SpawnClients(StringMap smActiveScenario, int iTeam)
+{	
 	StringMap smSpawn;
 	int iRand;
-	int iTeam;
 	float fPos[3];
 	
 	ArrayList aSpawns;
-	if(!smActiveScenario.GetValue("spawns", aSpawns) || aSpawns == INVALID_HANDLE)
+	ArrayList aActive;
+	
+	if(iTeam == CS_TEAM_CT)
 	{
-		LogError("The current Scenario has no spawns :/");
-		CalculatePlayers();
-		return;
+		if(!smActiveScenario.GetValue("spawnsct", aSpawns) || aSpawns == INVALID_HANDLE)
+		{
+			LogError("The current Scenario has no spawns for CT's :/");
+			CalculatePlayers();
+			return;
+		}
+		aActive = g_aActiveCT.Clone();
+	}else{
+		if(!smActiveScenario.GetValue("spawnst", aSpawns) || aSpawns == INVALID_HANDLE)
+		{
+			LogError("The current Scenario has no spawns for Ts :/");
+			CalculatePlayers();
+			return;
+		}
+		aActive = g_aActiveT.Clone();
 	}
 	
-	if(g_aActive.Length > aSpawns.Length)
+	if(aActive.Length > aSpawns.Length)
 	{
 		LogError("There aren't enough spawns for all active clients. Is the amount property set right?");
 		CalculatePlayers();
 		return;
 	}
-	
-	ArrayList aActive = g_aActive.Clone();
 	
 	for (int i = 0; i < aSpawns.Length; i++)
 	{
@@ -245,10 +276,10 @@ void SpawnClients(StringMap smActiveScenario)
 			return;
 		}
 		
-		if(smSpawn.GetValue("team", iTeam))
+		if(GetClientTeam(client) != iTeam)
 		{
-			if(GetClientTeam(client) != iTeam)
-				CS_SwitchTeam(client, iTeam);
+			CS_SwitchTeam(client, iTeam);
+			CS_UpdateClientModel(client);
 		}
 		
 		if(!smSpawn.GetArray("pos", fPos, sizeof(fPos)))
@@ -261,8 +292,6 @@ void SpawnClients(StringMap smActiveScenario)
 		
 		TeleportEntity(client, fPos, NULL_VECTOR, NULL_VECTOR);
 		CPrintToChatAll("[Execute] Client %N has been spawned at Positon: %f %f %f", client, fPos[0], fPos[1], fPos[2]);
-		
-		CS_UpdateClientModel(client);
 		
 		AssignWeapons(client, smSpawn);
 	}
@@ -318,6 +347,7 @@ public int Native_RegisterScenario(Handle plugin, int numParams)
 	int iAmount;
 	smScenario.GetValue("amount", iAmount);
 	CPrintToChatAll("Adding a new scenario for %i players", iAmount );
+	
 	if(smScenario == INVALID_HANDLE)
 		return 0;
 	

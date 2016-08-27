@@ -8,6 +8,7 @@
 #include <sourcemod>
 #include <sdktools>
 #include <execute>
+#include <cstrike>
 
 #pragma newdecls required
 
@@ -116,13 +117,21 @@ public void DB_LoadScenarios_Callback(Database db, DBResultSet results, const ch
 		StringMap smScenario = view_as<StringMap>(aScenarios.Get(iIndex));
 		StringMap smSpawn = new StringMap();
 		ArrayList aSpawns;
-		if(!smScenario.GetValue("spawns", aSpawns))
+		iTeam = results.FetchInt(4);
+		if(iTeam == CS_TEAM_CT)
 		{
-			aSpawns = new ArrayList(1);
+			if(!smScenario.GetValue("spawnsct", aSpawns))
+			{
+				aSpawns = new ArrayList(1);
+			}
+		}else{
+			if(!smScenario.GetValue("spawnst", aSpawns))
+			{
+				aSpawns = new ArrayList(1);
+			}
 		}
 		
-		iTeam = results.FetchInt(4);
-		smSpawn.SetValue("team", iTeam, false);
+		
 		results.FetchString(8, sPrimary, sizeof(sPrimary));
 		smSpawn.SetString("primary", sPrimary, false);
 		fPos[0] = results.FetchFloat(5);
@@ -130,7 +139,11 @@ public void DB_LoadScenarios_Callback(Database db, DBResultSet results, const ch
 		fPos[2] = results.FetchFloat(7);
 		smSpawn.SetArray("pos", fPos, 3, false);
 		aSpawns.Push(smSpawn);
-		smScenario.SetValue("spawns", aSpawns, true);
+		
+		if(iTeam == CS_TEAM_CT)
+			smScenario.SetValue("spawnsct", aSpawns, true);
+		else
+			smScenario.SetValue("spawnst", aSpawns, true);
 	}
 	
 	for (int i = 0; i < aScenarios.Length; i++)
