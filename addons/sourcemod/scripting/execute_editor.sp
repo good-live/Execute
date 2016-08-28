@@ -26,10 +26,12 @@ bool g_bConnected;
 bool g_bLateConnect;
 
 int g_iListen[MAXPLAYERS + 1];
+int g_iIndex[MAXPLAYERS + 1];
 
 Database g_hDatabase;
 
 ArrayList g_aScenarios;
+ArrayList g_aScenarioId;
 
 StringMap g_smScenario[MAXPLAYERS + 1];
 
@@ -44,6 +46,7 @@ public void OnPluginStart()
 		DB_Connect();
 		
 	g_aScenarios = new ArrayList(1);
+	g_aScenarioId = new ArrayList(1);
 
 	RegAdminCmd("sm_edit", Command_Edit, ADMFLAG_ROOT);
 	RegAdminCmd("sm_abort", Command_Abort, ADMFLAG_ROOT);
@@ -92,6 +95,45 @@ void LoadScenarios()
 	char sQuery[512];
 	Format(sQuery, sizeof(sQuery), "SELECT `scenarios`.`scenario_id`,`scenarios`.`name`,`scenarios`.`description`,`scenarios`.`amount`,`spawns`.`team`,`spawns`.`pos_x`,`spawns`.`pos_y`,`spawns`.`pos_z`,`spawns`.`primary` FROM scenarios JOIN `spawns` ON `scenarios`.`scenario_id`=`spawns`.`scenario_id` WHERE `scenarios`.`map`='%s'", sMap);
 	g_hDatabase.Query(DB_LoadScenarios_Callback, sQuery);
+}
+
+public void DB_UpdateScenario_Callback(Database db, DBResultSet results, const char[] error, any data)
+{
+	int client = GetClientOfUserId(data);
+	if(db == INVALID_HANDLE || strlen(error) > 0 || results == INVALID_HANDLE)
+	{
+		LogError("Error during saving scenarios: %s", error);
+		if(IsClientConnected(client))
+		{
+			CPrintToChat(client, "There has been an error during saving your scenario. Check your console.");
+			PrintToConsole(client, "%s", error);
+		}
+		return;
+	}
+	
+	CPrintToChat(client, "Your Scenario has been sucesfully been saved");
+	g_smScenario[client] = view_as<StringMap>(INVALID_HANDLE);
+	g_iIndex[client] = -1;
+	
+}
+public void DB_SaveNewScenario_Callback(Database db, DBResultSet results, const char[] error, any data)
+{
+	int client = GetClientOfUserId(data);
+	if(db == INVALID_HANDLE || strlen(error) > 0 || results == INVALID_HANDLE)
+	{
+		LogError("Error during saving scenarios: %s", error);
+		if(IsClientConnected(client))
+		{
+			CPrintToChat(client, "There has been an error during saving your scenario. Check your console.");
+			PrintToConsole(client, "%s", error);
+		}
+		return;
+	}
+	CPrintToChat(client, "Your Scenario has been sucesfully been saved");
+	g_aScenarios.Push(g_smScenario[client]);
+	g_aScenarioId.Push(results.InsertId);
+	g_smScenario[client] = view_as<StringMap>(INVALID_HANDLE);
+	g_iIndex[client] = -1;
 }
 
 public void DB_LoadScenarios_Callback(Database db, DBResultSet results, const char[] error, any data)
@@ -158,6 +200,7 @@ public void DB_LoadScenarios_Callback(Database db, DBResultSet results, const ch
 			smScenario.SetValue("spawnst", aSpawns, true);
 	}
 	
+	g_aScenarioId = aScenarioId;
 	g_aScenarios = aScenarios;
 }
 
@@ -202,8 +245,10 @@ public int SelectMenu(Menu menu, MenuAction action, int client, int param2)
 		{
 			StringMap smScenario = new StringMap();
 			g_smScenario[client] = smScenario;
+			g_iIndex[client] = -1;
 		}else{
 			g_smScenario[client] = g_aScenarios.Get(StringToInt(info));
+			g_iIndex[client] = StringToInt(info);
 		}
 		
 		ShowEditMenu(client);
@@ -236,6 +281,14 @@ void ShowEditMenu(int client)
 		menu.AddItem("name", sItem);
 	}
 	
+	if(!g_smScenario[client].GetString("desc", sName, sizeof(sName)))
+	{
+		menu.AddItem("desc", "Description: UNDEFINED");
+	}else{
+		Format(sItem, sizeof(sItem), "Description: %s", sName);
+		menu.AddItem("desc", sItem);
+	}
+	
 	if(!g_smScenario[client].GetValue("amount", iAmount))
 	{
 		menu.AddItem("amount", "Player Amount: UNDEFINED");
@@ -258,8 +311,10 @@ public int EditMenu(Menu menu, MenuAction action, int client, int param2)
 		menu.GetItem(param2, info, sizeof(info));
 		if(StrEqual(info, "name", false))
 			g_iListen[client] = 1;
-		else if (StrEqual(info, "amount", false))
+		else if (StrEqual(info, "desc", false))
 			g_iListen[client] = 2;
+		else if (StrEqual(info, "amount", false))
+			g_iListen[client] = 3;
 		else if (StrEqual(info, "save", false))
 			SaveCurrentScenario(client);
 		else if (StrEqual(info, "delete", false))
@@ -273,12 +328,48 @@ public int EditMenu(Menu menu, MenuAction action, int client, int param2)
 
 void SaveCurrentScenario(int client)
 {
-	//Code to save the scenario
+	char sName[32];
+	char sDesc[64];
+	char sMap[32];
+	
+	GetCurrentMap(sMap, sizeof(sMap));
+	
+	int iAmount;
+	
+	if(!g_smScenario[client].GetString("name", sName, sizeof(sName)))
+	{
+		CPrintToChat(client, "You need to enter a name");
+		ShowEditMenu(client);
+		return;
+	}
+	if(!g_smScenario[client].GetString("desc", sDesc, sizeof(sDesc)))
+	{
+		CPrintToChat(client, "You need to enter a description");
+		ShowEditMenu(client);
+		return;
+	}
+	if(!g_smScenario[client].GetValue("amount", iAmount))
+	{
+		CPrintToChat(client, "You need to enter a player amount");
+		ShowEditMenu(client);
+		return;
+	}
+	
+	char sQuery[512];
+	if(g_iIndex[client] == -1)
+	{
+		Format(sQuery, sizeof(sQuery), "INSERT INTO `execute`.`scenarios` (`scenario_id`, `name`, `description`, `amount`, `map`) VALUES (NULL, '%s', '%s', '%i', '%s')", sName, sDesc, iAmount, sMap);
+		g_hDatabase.Query(DB_SaveNewScenario_Callback, sQuery, GetClientUserId(client));
+	}else{
+		int iId = g_aScenarioId.Get(g_iIndex[client]);
+		Format(sQuery, sizeof(sQuery), "UPDATE `execute`.`scenarios` SET `name` = '%s', `description` = '%s', `amount` = '%i' WHERE `scenarios`.`scenario_id` = %i", sName, sDesc, iAmount, iId);
+		g_hDatabase.Query(DB_UpdateScenario_Callback, sQuery, GetClientUserId(client));
+	}
 }
 
 void DeleteCurrentScenario(int client)
 {
-	//Code to delete the scenario
+
 }
 
 public Action OnClientSayCommand(int client, const char[] command, const char[] sArgs)
@@ -298,6 +389,14 @@ public Action OnClientSayCommand(int client, const char[] command, const char[] 
 				return Plugin_Handled;
 			}
 			case 2:
+			{
+				g_smScenario[client].SetString("desc", sArgs, true);
+				CPrintToChat(client, "Saved the description locally");
+				ShowEditMenu(client);
+				g_iListen[client] = 0;
+				return Plugin_Handled;
+			}
+			case 3:
 			{
 				g_smScenario[client].SetValue("amount", StringToInt(sArgs), true);
 				CPrintToChat(client, "Saved the amount locally");
