@@ -34,6 +34,7 @@ ArrayList g_aScenarios;
 ArrayList g_aScenarioId;
 
 StringMap g_smScenario[MAXPLAYERS + 1];
+StringMap g_smSpawn[MAXPLAYERS + 1];
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
@@ -97,6 +98,26 @@ void LoadScenarios()
 	g_hDatabase.Query(DB_LoadScenarios_Callback, sQuery);
 }
 
+public void DB_DeleteScenario_Callback(Database db, DBResultSet results, const char[] error, any data)
+{
+	int client = GetClientOfUserId(data);
+	if(db == INVALID_HANDLE || strlen(error) > 0 || results == INVALID_HANDLE)
+	{
+		LogError("Error during deleting scenario: %s", error);
+		if(IsClientConnected(client))
+		{
+			CPrintToChat(client, "There has been an error during saving your scenario. Check your console.");
+			PrintToConsole(client, "%s", error);
+		}
+		return;
+	}
+	
+	CPrintToChat(client, "Your Scenario has been sucesfully been saved");
+	CloseHandles(g_smScenario[client]);
+	g_smScenario[client] = view_as<StringMap>(INVALID_HANDLE);
+	g_iIndex[client] = -1;
+	
+}
 public void DB_UpdateScenario_Callback(Database db, DBResultSet results, const char[] error, any data)
 {
 	int client = GetClientOfUserId(data);
@@ -257,6 +278,7 @@ public int SelectMenu(Menu menu, MenuAction action, int client, int param2)
 	{
 		delete menu;
 	}
+	return 0;
 }
 
 void ShowEditMenu(int client)
@@ -297,6 +319,7 @@ void ShowEditMenu(int client)
 		menu.AddItem("amount", sItem);
 	}
 	
+	menu.AddItem("spawn", "Edit spawns");
 	menu.AddItem("save", "Save this scenario");
 	menu.AddItem("delete", "Delete this scenario");
 	
@@ -319,10 +342,129 @@ public int EditMenu(Menu menu, MenuAction action, int client, int param2)
 			SaveCurrentScenario(client);
 		else if (StrEqual(info, "delete", false))
 			DeleteCurrentScenario(client);
+		else if (StrEqual(info, "spawn"))
+			ShowSpawnMenu(client);
 	}
 	else if (action == MenuAction_End)
 	{
 		delete menu;
+	}
+}
+
+void ShowSpawnMenu(int client)
+{
+	if(g_smScenario[client] == INVALID_HANDLE)
+	{	
+		CPrintToChat(client, "Couldn't allocate your current scenario. Please use !edit");
+		return;
+	}
+	Menu menu = new Menu(SpawnMenu);
+	menu.SetTitle("Select a spawn");
+	menu.AddItem("new", "Create a new spawn");
+	ArrayList spawns;
+	StringMap spawn;
+	int iID;
+	char sInfo[16];
+	char sItem[32];
+	if(g_smScenario[client].GetValue("spawnt", spawns))
+	{
+		for (int i = 0; i <= spawns.Length; i++)
+		{
+			spawn = spawns.Get(i);
+			if(spawn != INVALID_HANDLE && spawn.GetValue("ID", iID))
+			{
+				IntToString(iID, sInfo, sizeof(sInfo));
+				Format(sItem, sizeof(sItem), "ID: %i", iID);
+			}
+		}
+	}
+	if(g_smScenario[client].GetValue("spawnct", spawns))
+	{
+		for (int i = 0; i <= spawns.Length; i++)
+		{
+			spawn = spawns.Get(i);
+			if(spawn != INVALID_HANDLE && spawn.GetValue("ID", iID))
+			{
+				IntToString(iID, sInfo, sizeof(sInfo));
+				Format(sItem, sizeof(sItem), "ID: %i", iID);
+			}
+		}
+	}
+	menu.AddItem("back", "Go back");
+	menu.Display(client, MENU_TIME_FOREVER);
+}
+
+public int SpawnMenu(Menu menu, MenuAction action, int client, int param2)
+{
+	if (action == MenuAction_Select)
+	{
+		char info[32];
+		menu.GetItem(param2, info, sizeof(info));
+		if(StrEqual(info, "new", false))
+		{
+			StringMap smSpawn = new StringMap();
+			g_smSpawn[client] = smSpawn;
+			ShowSpawnEditMenu(client);
+		}else if (StrEqual(info, "back", false)){
+			ShowEditMenu(client);
+		}else{
+			ArrayList spawns;
+			StringMap spawn;
+			int iID = StringToInt(info);
+			int iTemp;
+			if(g_smScenario[client].GetValue("spawnt", spawns) && spawns != INVALID_HANDLE)
+			{
+				for (int i = 0; i < spawns.Length; i++)
+				{
+					spawn = spawns.Get(i);
+					if(spawn != INVALID_HANDLE)
+					{
+						if(spawn.GetValue("ID", iTemp))
+						{
+							if(iID == iTemp)
+							{
+								g_smSpawn[client] = spawn;
+								ShowSpawnEditMenu(client);
+								return 0;
+							}
+						}
+					}
+				}
+			}
+			if(g_smScenario[client].GetValue("spawnct", spawns) && spawns != INVALID_HANDLE)
+			{
+				for (int i = 0; i < spawns.Length; i++)
+				{
+					spawn = spawns.Get(i);
+					if(spawn != INVALID_HANDLE)
+					{
+						if(spawn.GetValue("ID", iTemp))
+						{
+							if(iID == iTemp)
+							{
+								g_smSpawn[client] = spawn;
+								ShowSpawnEditMenu(client);
+								return 0;
+							}
+						}
+					}
+				}
+			}
+			CPrintToChat(client, "We couldn't find this spawn. Maybe it got deleted?");
+		}
+	}
+	else if (action == MenuAction_End)
+	{
+		delete menu;
+	}
+	return 0;
+}
+
+void ShowSpawnEditMenu(int client)
+{
+	if(g_smSpawn[client] == INVALID_HANDLE)
+	{
+		CPrintToChat(client, "Something went wrong. Please try again");
 	}
 }
 
@@ -373,12 +515,10 @@ void DeleteCurrentScenario(int client)
 	{
 		char sQuery[512];
 		Format(sQuery, sizeof(sQuery), "DELETE FROM `execute`.`scenarios` WHERE `scenarios`.`scenario_id` = %i", g_aScenarioId.Get(g_iIndex[client]));
+		g_hDatabase.Query(DB_DeleteScenario_Callback, sQuery, GetClientUserId(client));
 		g_aScenarioId.Erase(g_iIndex[client]);
 		g_aScenarios.Erase(g_iIndex[client]);
 	}
-	CloseHandles(g_smScenario[client]);
-	g_smScenario[client] = view_as<StringMap>(INVALID_HANDLE);
-	g_iIndex[client] = -1;
 }
 
 void CloseHandles(StringMap scenario)
