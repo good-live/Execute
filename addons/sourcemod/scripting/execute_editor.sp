@@ -367,7 +367,7 @@ void ShowSpawnMenu(int client)
 	int iID;
 	char sInfo[16];
 	char sItem[32];
-	if(g_smScenario[client].GetValue("spawnt", spawns))
+	if(g_smScenario[client].GetValue("spawnst", spawns))
 	{
 		for (int i = 0; i <= spawns.Length; i++)
 		{
@@ -379,7 +379,7 @@ void ShowSpawnMenu(int client)
 			}
 		}
 	}
-	if(g_smScenario[client].GetValue("spawnct", spawns))
+	if(g_smScenario[client].GetValue("spawnsct", spawns))
 	{
 		for (int i = 0; i <= spawns.Length; i++)
 		{
@@ -413,7 +413,7 @@ public int SpawnMenu(Menu menu, MenuAction action, int client, int param2)
 			StringMap spawn;
 			int iID = StringToInt(info);
 			int iTemp;
-			if(g_smScenario[client].GetValue("spawnt", spawns) && spawns != INVALID_HANDLE)
+			if(g_smScenario[client].GetValue("spawnst", spawns) && spawns != INVALID_HANDLE)
 			{
 				for (int i = 0; i < spawns.Length; i++)
 				{
@@ -432,7 +432,7 @@ public int SpawnMenu(Menu menu, MenuAction action, int client, int param2)
 					}
 				}
 			}
-			if(g_smScenario[client].GetValue("spawnct", spawns) && spawns != INVALID_HANDLE)
+			if(g_smScenario[client].GetValue("spawnsct", spawns) && spawns != INVALID_HANDLE)
 			{
 				for (int i = 0; i < spawns.Length; i++)
 				{
@@ -529,7 +529,7 @@ void CloseHandles(StringMap scenario)
 	{
 		ArrayList spawntemp;
 		StringMap spawn;
-		if(scenario.GetValue("spawnt", spawntemp))
+		if(scenario.GetValue("spawnst", spawntemp))
 		{
 			if(spawntemp != INVALID_HANDLE)
 			{
@@ -544,7 +544,7 @@ void CloseHandles(StringMap scenario)
 				CloseHandle(spawntemp);
 			}
 		}
-		if(scenario.GetValue("spawnct", spawntemp))
+		if(scenario.GetValue("spawnsct", spawntemp))
 		{
 			if(spawntemp != INVALID_HANDLE)
 			{
