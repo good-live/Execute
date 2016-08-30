@@ -369,15 +369,64 @@ void SaveCurrentScenario(int client)
 
 void DeleteCurrentScenario(int client)
 {
-
+	if(g_iIndex[client] != -1)
+	{
+		char sQuery[512];
+		Format(sQuery, sizeof(sQuery), "DELETE FROM `execute`.`scenarios` WHERE `scenarios`.`scenario_id` = %i", g_aScenarioId.Get(g_iIndex[client]));
+		g_aScenarioId.Erase(g_iIndex[client]);
+		g_aScenarios.Erase(g_iIndex[client]);
+	}
+	CloseHandles(g_smScenario[client]);
+	g_smScenario[client] = view_as<StringMap>(INVALID_HANDLE);
+	g_iIndex[client] = -1;
 }
 
-public Action OnClientSayCommand(int client, const char[] command, const char[] sArgs)
+void CloseHandles(StringMap scenario)
 {
-	if(g_iListen[client])
+	//Close all these handles. We dont want to leak the memory >:D.
+	if(scenario != INVALID_HANDLE)
+	{
+		ArrayList spawntemp;
+		StringMap spawn;
+		if(scenario.GetValue("spawnt", spawntemp))
+		{
+			if(spawntemp != INVALID_HANDLE)
+			{
+				for (int i = 0; i < spawntemp.Length; i++)
+				{
+					spawn = spawntemp.Get(i);
+					if(spawn != INVALID_HANDLE)
+					{
+						CloseHandle(spawn);
+					}
+				}
+				CloseHandle(spawntemp);
+			}
+		}
+		if(scenario.GetValue("spawnct", spawntemp))
+		{
+			if(spawntemp != INVALID_HANDLE)
+			{
+				for (int i = 0; i < spawntemp.Length; i++)
+				{
+					spawn = spawntemp.Get(i);
+					if(spawn != INVALID_HANDLE)
+					{
+						CloseHandle(spawn);
+					}
+				}
+				CloseHandle(spawntemp);
+			}
+		}
+		CloseHandle(scenario);
+	}
+}
+public void OnClientSayCommand_Post(int client, const char[] command, const char[] sArgs)
+{
+	if(!g_iListen[client])
 	{
 		if(g_smScenario[client] == INVALID_HANDLE)
-			return Plugin_Continue;
+			return;
 		switch (g_iListen[client])
 		{
 			case 1:
@@ -386,7 +435,7 @@ public Action OnClientSayCommand(int client, const char[] command, const char[] 
 				CPrintToChat(client, "Saved the name locally");
 				ShowEditMenu(client);
 				g_iListen[client] = 0;
-				return Plugin_Handled;
+				return;
 			}
 			case 2:
 			{
@@ -394,7 +443,7 @@ public Action OnClientSayCommand(int client, const char[] command, const char[] 
 				CPrintToChat(client, "Saved the description locally");
 				ShowEditMenu(client);
 				g_iListen[client] = 0;
-				return Plugin_Handled;
+				return;
 			}
 			case 3:
 			{
@@ -402,11 +451,11 @@ public Action OnClientSayCommand(int client, const char[] command, const char[] 
 				CPrintToChat(client, "Saved the amount locally");
 				ShowEditMenu(client);
 				g_iListen[client] = 0;
-				return Plugin_Handled;
+				return;
 			}
 		}
 	}
-	return Plugin_Continue;
+	return;
 }
 
 public Action Command_Abort(int client, int args)
