@@ -467,6 +467,32 @@ void ShowSpawnEditMenu(int client)
 	{
 		CPrintToChat(client, "Something went wrong. Please try again");
 	}
+	
+	Menu menu = new Menu(SpawnEditMenu);
+	
+	menu.SetTitle("Spawn propertys");
+	
+	float fPos[3];
+	char sItem[32];
+	if(g_smSpawn.GetArray("pos", fPos, 3))
+	{
+		Format(sItem, sizeof(sItem), "Position: %f, %f, %f", fPos[0], fPos[1], fPos[2]);
+		menu.AddItem("pos", sItem);
+	}else{
+		menu.AddItem("pos", "Position: UNDEFINED");
+	}
+	
+	char sPrimary[16];
+	if(g_smSpawn.GetString("primary", sPrimary, sizeof(sPrimary)))
+	{
+		Format(sItem, sizeof(sItem), "Primary Weapon: %s", sPrimary);
+		menu.AddItem("primary", sItem);
+	}else{
+		menu.AddItem("primary", "Primary Weapon: UNDEFINED");
+	}
+	
+	menu.AddItem("save", "Save this spawn");
+	menu.AddItem("delete", "Delete this spawn");
 }
 
 void SaveCurrentScenario(int client)
