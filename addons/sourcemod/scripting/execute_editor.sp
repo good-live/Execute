@@ -94,7 +94,7 @@ void LoadScenarios()
 	GetCurrentMap(sMap, sizeof(sMap));
 	
 	char sQuery[512];
-	Format(sQuery, sizeof(sQuery), "SELECT `scenarios`.`scenario_id`,`scenarios`.`name`,`scenarios`.`description`,`scenarios`.`amount`,`spawns`.`team`,`spawns`.`pos_x`,`spawns`.`pos_y`,`spawns`.`pos_z`,`spawns`.`primary` FROM scenarios JOIN `spawns` ON `scenarios`.`scenario_id`=`spawns`.`scenario_id` WHERE `scenarios`.`map`='%s'", sMap);
+	Format(sQuery, sizeof(sQuery), "SELECT `scenarios`.`scenario_id`,`scenarios`.`name`,`scenarios`.`description`,`scenarios`.`amount`,`spawns`.`team`,`spawns`.`pos_x`,`spawns`.`pos_y`,`spawns`.`pos_z`,`spawns`.`primary`, `spawns`.`spawn_id` FROM scenarios JOIN `spawns` ON `scenarios`.`scenario_id`=`spawns`.`scenario_id` WHERE `scenarios`.`map`='%s'", sMap);
 	g_hDatabase.Query(DB_LoadScenarios_Callback, sQuery);
 }
 
@@ -213,6 +213,7 @@ public void DB_LoadScenarios_Callback(Database db, DBResultSet results, const ch
 		fPos[1] = results.FetchFloat(6);
 		fPos[2] = results.FetchFloat(7);
 		smSpawn.SetArray("pos", fPos, 3, false);
+		smSpawn.SetValue("ID", results.FetchInt(9), false);
 		aSpawns.Push(smSpawn);
 		
 		if(iTeam == CS_TEAM_CT)
