@@ -36,6 +36,42 @@ ArrayList g_aScenarioId;
 StringMap g_smScenario[MAXPLAYERS + 1];
 StringMap g_smSpawn[MAXPLAYERS + 1];
 
+char g_sRifles[][][] = {
+	{"weapon_ak47","AK-47"},
+	{"weapon_aug","AUG"},
+	{"weapon_famas","FAMAS"},
+	{"weapon_g3sg1","G3SG1"},
+	{"weapon_galilar","Galil"},
+	{"weapon_m249","M249"},
+	{"weapon_m4a1","M4A1"},
+	{"weapon_negev","Negev"},
+	{"weapon_scar20","Scar 20"},
+	{"weapon_sg556","sg556"},
+	{"weapon_ssg08","Scout"},
+	{"random_rifle", "Random Rifle"},
+	{"pref_rifle", "Prefered Rifle"}
+};
+
+char g_sShotguns[][][] = {
+	{"weapon_xm1014","xm1014"},
+	{"weapon_sawedoff","SawedOff"},
+	{"weapon_nova","Nova"},
+	{"weapon_mag7","MAG7"},
+	{"random_shotgun", "Random Shotgun"},
+	{"pref_shotgun", "Prefered Shotgun"}
+};
+
+char g_sMPs[][][] = {
+	{"weapon_mp7","MP7"},
+	{"weapon_mp9","MP9"},
+	{"weapon_bizon","Bizon"},
+	{"weapon_ump45","UMP"},
+	{"weapon_p90","P90"},
+	{"weapon_mac10","MAC-10"},
+	{"random_mp", "Random MP"},
+	{"pref_mp", "Prefered MP"}
+};
+
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
 	g_bLateConnect = late;
@@ -352,6 +388,145 @@ public int EditMenu(Menu menu, MenuAction action, int client, int param2)
 	}
 }
 
+public int SpawnEditMenu(Menu menu, MenuAction action, int client, int param2)
+{
+	if (action == MenuAction_Select)
+	{
+		char info[32];
+		menu.GetItem(param2, info, sizeof(info));
+		if(StrEqual(info, "pos", false))
+		{
+			float fPos[3];
+			GetClientAbsOrigin(client, fPos);
+			g_smSpawn[client].SetArray("pos", fPos, 3, true);
+			CPrintToChat(client, "Saved the spawn position locally");
+		}
+		else if (StrEqual(info, "primary", false))
+			ShowPrimaryMenu(client);
+		else if (StrEqual(info, "delete", false))
+			return; //TODO
+	}
+	else if (action == MenuAction_End)
+	{
+		delete menu;
+	}
+}
+
+void ShowPrimaryMenu(int client)
+{
+	Menu menu = new Menu(PrimaryMenu);
+	menu.SetTitle("Choose a class");
+	menu.AddItem("rifle", "Rifle");
+	menu.AddItem("shotgun", "Shotgun");
+	menu.AddItem("mp", "MP");
+	menu.AddItem("random", "Random");
+	menu.AddItem("pref", "Prefered Primary");
+	menu.Display(client, MENU_TIME_FOREVER);
+}
+
+public int PrimaryMenu(Menu menu, MenuAction action, int client, int param2)
+{
+	if (action == MenuAction_Select)
+	{
+		char info[32];
+		menu.GetItem(param2, info, sizeof(info));
+		if(StrEqual(info, "rifle", false))
+		{
+			ShowRifleMenu(client);
+		}else if (StrEqual(info, "shotgun", false)){
+			ShowShotgunMenu(client);
+		}else if (StrEqual(info, "mp", false)){
+			ShowMPMenu(client);
+		}else{
+			g_smSpawn[client].SetString("primary", info, true);
+		}
+	}else if (action == MenuAction_End)
+	{
+		delete menu;
+	}
+}
+
+void ShowRifleMenu(int client)
+{
+	Menu menu = new Menu(RifleMenu);
+	menu.SetTitle("Choose a rifle");
+	char sInfo[16];
+	for (int i = 0; i < sizeof(g_sRifles); i++)
+	{
+		IntToString(i, sInfo, sizeof(sInfo));
+		menu.AddItem(sInfo, g_sRifles[i][1]);
+	}
+	menu.Display(client, MENU_TIME_FOREVER);
+}
+
+public int RifleMenu(Menu menu, MenuAction action, int client, int param2)
+{
+	if (action == MenuAction_Select)
+	{
+		char info[32];
+		menu.GetItem(param2, info, sizeof(info));
+		int iIndex = StringToInt(info);
+		g_smSpawn[client].SetString("primary", g_sRifles[iIndex][0], true);
+	}else if (action == MenuAction_End)
+	{
+		delete menu;
+	}
+}
+
+void ShowShotgunMenu(int client)
+{
+	Menu menu = new Menu(ShotgunMenu);
+	menu.SetTitle("Choose a rifle");
+	char sInfo[16];
+	for (int i = 0; i < sizeof(g_sShotguns); i++)
+	{
+		IntToString(i, sInfo, sizeof(sInfo));
+		menu.AddItem(sInfo, g_sShotguns[i][1]);
+	}
+	menu.Display(client, MENU_TIME_FOREVER);
+}
+
+public int ShotgunMenu(Menu menu, MenuAction action, int client, int param2)
+{
+	if (action == MenuAction_Select)
+	{
+		char info[32];
+		menu.GetItem(param2, info, sizeof(info));
+		int iIndex = StringToInt(info);
+		g_smSpawn[client].SetString("primary", g_sShotguns[iIndex][0], true);
+	}else if (action == MenuAction_End)
+	{
+		delete menu;
+	}
+}
+
+void ShowMPMenu(int client)
+{
+	Menu menu = new Menu(MPMenu);
+	menu.SetTitle("Choose a rifle");
+	char sInfo[16];
+	for (int i = 0; i < sizeof(g_sMPs); i++)
+	{
+		IntToString(i, sInfo, sizeof(sInfo));
+		menu.AddItem(sInfo, g_sMPs[i][1]);
+	}
+	menu.Display(client, MENU_TIME_FOREVER);
+}
+
+public int MPMenu(Menu menu, MenuAction action, int client, int param2)
+{
+	if (action == MenuAction_Select)
+	{
+		char info[32];
+		menu.GetItem(param2, info, sizeof(info));
+		int iIndex = StringToInt(info);
+		g_smSpawn[client].SetString("primary", g_sMPs[iIndex][0], true);
+	}else if (action == MenuAction_End)
+	{
+		delete menu;
+	}
+}
+
 void ShowSpawnMenu(int client)
 {
 	if(g_smScenario[client] == INVALID_HANDLE)
@@ -474,7 +649,7 @@ void ShowSpawnEditMenu(int client)
 	
 	float fPos[3];
 	char sItem[32];
-	if(g_smSpawn.GetArray("pos", fPos, 3))
+	if(g_smSpawn[client].GetArray("pos", fPos, 3))
 	{
 		Format(sItem, sizeof(sItem), "Position: %f, %f, %f", fPos[0], fPos[1], fPos[2]);
 		menu.AddItem("pos", sItem);
@@ -483,7 +658,7 @@ void ShowSpawnEditMenu(int client)
 	}
 	
 	char sPrimary[16];
-	if(g_smSpawn.GetString("primary", sPrimary, sizeof(sPrimary)))
+	if(g_smSpawn[client].GetString("primary", sPrimary, sizeof(sPrimary)))
 	{
 		Format(sItem, sizeof(sItem), "Primary Weapon: %s", sPrimary);
 		menu.AddItem("primary", sItem);
@@ -492,7 +667,6 @@ void ShowSpawnEditMenu(int client)
 	}
 	
 	menu.AddItem("save", "Save this spawn");
-	menu.AddItem("delete", "Delete this spawn");
 }
 
 void SaveCurrentScenario(int client)
