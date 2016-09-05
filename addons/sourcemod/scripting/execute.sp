@@ -213,6 +213,20 @@ void InitiateRandomScenario(int iAmountQueue)
 	
 	SpawnClients(smActiveScenario, CS_TEAM_T);
 	SpawnClients(smActiveScenario, CS_TEAM_CT);
+	
+	//Print scenario description to the T's
+	char sDesc[64];
+	if(smActiveScenario.GetString("desc", sDesc, sizeof(sDesc))
+	{
+		for (int i = 0; i < g_aActiveT; i++)
+		{
+			int client = GetClientOfUserId(aActive.Get(i));
+			if(IsClientValid(client))
+			{
+				CPrintToChat(client, sDesc);
+			}
+		}
+	}
 }
 
 void SpawnClients(StringMap smActiveScenario, int iTeam)
