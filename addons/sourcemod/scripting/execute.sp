@@ -204,8 +204,6 @@ void InitiateRandomScenario(int iAmountQueue)
 	char sName[64];
 	smActiveScenario.GetString("name", sName, sizeof(sName));
 	
-	CPrintToChatAll("The Scenario %s has started. %i player/s from the Queue get added to the game.", sName, iAmountQueue);
-	
 	AddClientsToGame(iAmountQueue);
 	
 	if(g_cTeamBalance.BoolValue)
@@ -216,11 +214,11 @@ void InitiateRandomScenario(int iAmountQueue)
 	
 	//Print scenario description to the T's
 	char sDesc[64];
-	if(smActiveScenario.GetString("desc", sDesc, sizeof(sDesc))
+	if(smActiveScenario.GetString("desc", sDesc, sizeof(sDesc)))
 	{
-		for (int i = 0; i < g_aActiveT; i++)
+		for (int i = 0; i < g_aActiveT.Length; i++)
 		{
-			int client = GetClientOfUserId(aActive.Get(i));
+			int client = GetClientOfUserId(g_aActiveT.Get(i));
 			if(IsClientValid(client))
 			{
 				CPrintToChat(client, sDesc);
@@ -311,12 +309,12 @@ void SpawnClients(StringMap smActiveScenario, int iTeam)
 	}
 }
 
-void AssignWeapons(int client, StringMap smActiveScenario)
+void AssignWeapons(int client, StringMap smSpawn)
 {
 	StripWeapons(client);
 	
 	char sPrimary[32];
-	if(smActiveScenario.GetString("primary", sPrimary, sizeof(sPrimary)))
+	if(smSpawn.GetString("primary", sPrimary, sizeof(sPrimary)))
 	{
 		if(StrEqual(sPrimary, "weapon_m4a1", false) || StrEqual(sPrimary, "weapon_m4a1_silencer", false))
 		{
@@ -327,6 +325,18 @@ void AssignWeapons(int client, StringMap smActiveScenario)
 		}else{
 			GivePlayerItem(client, sPrimary);
 		}
+	}
+	char sSecoundary[32];
+	if(smSpawn.GetString("secoundary", sSecoundary, sizeof(sSecoundary)))
+	{
+		if(StrEqual(sPrimary, "random", false))
+		{
+			//TODO Give him a random secoundary weapon
+		}else if(StrEqual(sPrimary, "pref", false)){
+			//TODO Give him his preferred weapon
+		}else{
+			GivePlayerItem(client, sSecoundary);
+		}		
 	}
 }
 
