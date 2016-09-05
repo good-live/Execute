@@ -186,6 +186,7 @@ public void DB_SaveNewScenario_Callback(Database db, DBResultSet results, const 
 		}
 		return;
 	}
+	//TODO Save spawns
 	CPrintToChat(client, "Your Scenario has been sucesfully been saved");
 	g_aScenarios.Push(g_smScenario[client]);
 	g_aScenarioId.Push(results.InsertId);
