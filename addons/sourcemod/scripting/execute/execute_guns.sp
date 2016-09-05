@@ -1,11 +1,23 @@
 bool g_bUseM4[MAXPLAYERS + 1];
+char g_sPrimaryPref[MAXPLAYERS + 1] [32];
+char g_sRiflePref[MAXPLAYERS + 1] [32];
+char g_sShotgunPref[MAXPLAYERS + 1] [32];
+char g_sMPPref[MAXPLAYERS + 1] [32];
+
+Handle g_hPrimaryCookie;
+Handle g_hRifleCookie;
+Handle g_hShotgunCookie;
+Handle g_hMPCookie;
 Handle g_hM4Cookie;
 
 public void Guns_OnPluginStart()
 {
-	//TODO Chane Cokkie Access when everything is working fine. This is just for debug reasons readable.
-	g_hM4Cookie = RegClientCookie("M4A1S", "Whether you wanna use the M4A1S or just the M4", CookieAccess_Protected);
-	
+	//TODO Change Cokkie Access when everything is working fine. This is just for debug reasons readable.
+	g_hM4Cookie = RegClientCookie("execute_m4a1", "Whether you wanna use the M4A1S or just the M4", CookieAccess_Protected);
+	g_hPrimaryCookie = RegClientCookie("execute_primary", "The prefered primary weapon", CookieAccess_Protected);
+	g_hRifleCookie = RegClientCookie("execute_rifle", "The prefered primary weapon", CookieAccess_Protected);
+	g_hShotgunCookie = RegClientCookie("execute_shotgun", "The prefered primary weapon", CookieAccess_Protected);
+	g_hMPCookie = RegClientCookie("execute_mp", "The prefered primary weapon", CookieAccess_Protected);	
 	//Cookie LateLoading
 	for (int i = 1; i <= MaxClients; i++)
     {
@@ -42,6 +54,10 @@ void ShowGunMenuToClient(int client)
 		Format(sItem, sizeof(sItem), "%t", "Gun_Menu_M4_Yes");
 		menu.AddItem("m4_y", sItem);
 	}
+	menu.AddItem("primary", "Primary");
+	menu.AddItem("rifle", "Rifle");
+	menu.AddItem("shotgun", "Shotgun");
+	menu.AddItem("mp", "MP");
 	
 	menu.Display(client, MENU_TIME_FOREVER);
 }
@@ -64,6 +80,14 @@ public int GunMenu_Callback(Menu menu, MenuAction action, int param1, int param2
 				g_bUseM4[param1] = true;
 				SetClientCookie(param1, g_hM4Cookie, "1");
 				CPrintToChat(param1, "%t%t", "TAG", "You started using M4A1");
+			}else if(StrEqual("primary", info, false)){
+				ShowPrimarySelection(client);
+			}else if(StrEqual("rifle", info, false)){
+				ShowRifleSelection(client);
+			}else if(StrEqual("shotgun", info, false)){
+				ShowShotgunSelection(client);
+			}else if(StrEqual("mp", info, false)){
+				ShowMPSelection(client);
 			}
 		}
 		case MenuAction_Cancel:
@@ -77,10 +101,37 @@ public int GunMenu_Callback(Menu menu, MenuAction action, int param1, int param2
 	}
 }
 
+void ShowPrimarySelection(int client, char[][][] sWeapons, char [][] sCookie)
+{
+	Menu menu = new Menu(PrimarySelection);
+	char sTitle[16];
+	Format(sTitle, sizeof(sTitle), "%t", "Primary Selection - Title");
+	menu.AddItem(sTitle);
+	char sInfo[8];
+	for (int i = 0; i < sizeof(g_sRifles); i++)
+	{
+		IntToString(i, sInfo, sizeof(sInfo));
+		menu.AddItem(sInfo, g_sRifles[i][1]);
+	}
+	for (int i = 0; i < sizeof(g_sShotguns); i++)
+	{
+		IntToString(i, sInfo, sizeof(sInfo));
+		menu.AddItem(sInfo, g_sShotguns[i][1]);
+	}
+	for (int i = 0; i < sizeof(g_sMPs); i++)
+	{
+		IntToString(i, sInfo, sizeof(sInfo));
+		menu.AddItem(sInfo, g_sMPs[i][1]);
+	}
+}
+
 public void OnClientCookiesCached(int client)
 {
     char sValue[8];
     GetClientCookie(client, g_hM4Cookie, sValue, sizeof(sValue));
-    
     g_bUseM4[client] = (sValue[0] != '\0' && StringToInt(sValue));
+    GetClientCookie(client, g_hPrimaryCookie, g_sPrimaryPref[client], 32);
+    GetClientCookie(client, g_hRifleCookie, g_sRiflePref[client], 32);
+    GetClientCookie(client, g_hShotgunCookie, g_sShotgunPref[client], 32);
+    GetClientCookie(client, g_hMPCookie, g_sMPPref[client], 32);
 }
