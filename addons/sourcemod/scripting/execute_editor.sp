@@ -168,7 +168,73 @@ public void DB_UpdateScenario_Callback(Database db, DBResultSet results, const c
 		return;
 	}
 	
+	char sQuery[512];
+	ArrayList spawns;
+	StringMap spawn;
+	int iSpawnID;
+	int iTeam;
+	float fPos[3];
+	char sPrimary[32];
+	if(g_smScenario[client].GetValue("spawnst", spawns) && spawns != INVALID_HANDLE)
+	{
+		iTeam = CS_TEAM_T;
+		for (int i = 0; i < spawns.Length; i++)
+		{
+			spawn = spawns.Get(i);
+			if(spawn != INVALID_HANDLE)
+			{	
+				if(!spawn.GetValue("ID", iSpawnID))
+				{
+					CPrintToChat(client, "Couldn't update a spawn, because there was no spawnid saved");
+					continue;
+				}
+				
+				if(!spawn.GetArray("pos", fPos, 3))
+				{
+					CPrintToChat(client, "Couldn't update a spawn, because there was no position saved");
+					continue;
+				}
+				
+				if(!spawn.GetString("primary", sPrimary, sizeof(sPrimary)))
+				{
+					Format(sPrimary, sizeof(sPrimary), "NULL");
+				}
+				Format(sQuery, sizeof(sQuery), "UPDATE `execute`.`spawns` SET `team` = '%i', `pos_x` = '%f', `pos_y` = '%f', `pos_z` = '%f', `primary` = '%s' WHERE `spawns`.`spawn_id` = %i", iTeam, fPos[0], fPos[1], fPos[2], sPrimary, iSpawnID);
+				g_hDatabase.Query(DB_NewSpawnSaved_Callback, sQuery, data);
+			}
+		}
+	}
+	if(g_smScenario[client].GetValue("spawnsct", spawns) && spawns != INVALID_HANDLE)
+	{
+		iTeam = CS_TEAM_CT;
+		for (int i = 0; i < spawns.Length; i++)
+		{
+			spawn = spawns.Get(i);
+			if(spawn != INVALID_HANDLE)
+			{
+				if(!spawn.GetValue("ID", iSpawnID))
+				{
+					CPrintToChat(client, "Couldn't update a spawn, because there was no spawnid saved");
+					continue;
+				}
+				
+				if(!spawn.GetArray("pos", fPos, 3))
+				{
+					CPrintToChat(client, "Couldn't update a spawn, because there was no position saved");
+					continue;
+				}
+				
+				if(!spawn.GetString("primary", sPrimary, sizeof(sPrimary)))
+				{
+					Format(sPrimary, sizeof(sPrimary), "NULL");
+				}
+				Format(sQuery, sizeof(sQuery), "UPDATE `execute`.`spawns` SET `team` = '%i', `pos_x` = '%f', `pos_y` = '%f', `pos_z` = '%f', `primary` = '%s' WHERE `spawns`.`spawn_id` = %i", iTeam, fPos[0], fPos[1], fPos[2], sPrimary, iSpawnID);
+				g_hDatabase.Query(DB_NewSpawnSaved_Callback, sQuery, data);
+			}
+		}
+	}
 	CPrintToChat(client, "Your Scenario has been sucesfully been saved");
+	g_smSpawn[client] = view_as<StringMap>(INVALID_HANDLE);
 	g_smScenario[client] = view_as<StringMap>(INVALID_HANDLE);
 	g_iIndex[client] = -1;
 	
@@ -186,14 +252,81 @@ public void DB_SaveNewScenario_Callback(Database db, DBResultSet results, const 
 		}
 		return;
 	}
-	//TODO Save spawns
+	char sQuery[512];
+	ArrayList spawns;
+	StringMap spawn;
+	int iScenarioID = results.InsertId;
+	int iTeam;
+	float fPos[3];
+	char sPrimary[32];
+	if(g_smScenario[client].GetValue("spawnst", spawns) && spawns != INVALID_HANDLE)
+	{
+		iTeam = CS_TEAM_T;
+		for (int i = 0; i < spawns.Length; i++)
+		{
+			spawn = spawns.Get(i);
+			if(spawn != INVALID_HANDLE)
+			{	
+				if(!spawn.GetArray("pos", fPos, 3))
+				{
+					CPrintToChat(client, "Couldn't save a spawn, because there was no position saved");
+					continue;
+				}
+				
+				if(!spawn.GetString("primary", sPrimary, sizeof(sPrimary)))
+				{
+					Format(sPrimary, sizeof(sPrimary), "NULL");
+				}
+				Format(sQuery, sizeof(sQuery), "INSERT INTO `execute`.`spawns` (`spawn_id`, `scenario_id`, `team`, `pos_x`, `pos_y`, `pos_z`, `primary`) VALUES (NULL, '%i', '%i', '%f', '%f', '%f', '%s')", iScenarioID, iTeam, fPos[0], fPos[1], fPos[2], sPrimary);
+				g_hDatabase.Query(DB_NewSpawnSaved_Callback, sQuery, data);
+			}
+		}
+	}
+	if(g_smScenario[client].GetValue("spawnsct", spawns) && spawns != INVALID_HANDLE)
+	{
+		iTeam = CS_TEAM_CT;
+		for (int i = 0; i < spawns.Length; i++)
+		{
+			spawn = spawns.Get(i);
+			if(spawn != INVALID_HANDLE)
+			{
+				if(!spawn.GetArray("pos", fPos, 3))
+				{
+					CPrintToChat(client, "Couldn't save a spawn, because there was no position saved");
+					continue;
+				}
+				
+				if(!spawn.GetString("primary", sPrimary, sizeof(sPrimary)))
+				{
+					Format(sPrimary, sizeof(sPrimary), "NULL");
+				}
+				Format(sQuery, sizeof(sQuery), "INSERT INTO `execute`.`spawns` (`spawn_id`, `scenario_id`, `team`, `pos_x`, `pos_y`, `pos_z`, `primary`) VALUES (NULL, '%i', '%i', '%f', '%f', '%f', '%s')", iScenarioID, iTeam, fPos[0], fPos[1], fPos[2], sPrimary);
+				g_hDatabase.Query(DB_NewSpawnSaved_Callback, sQuery, data);
+			}
+		}
+	}
 	CPrintToChat(client, "Your Scenario has been sucesfully been saved");
+	g_smSpawn[client] = view_as<StringMap>(INVALID_HANDLE);
 	g_aScenarios.Push(g_smScenario[client]);
-	g_aScenarioId.Push(results.InsertId);
+	g_aScenarioId.Push(iScenarioID);
 	g_smScenario[client] = view_as<StringMap>(INVALID_HANDLE);
 	g_iIndex[client] = -1;
 }
 
+public void DB_NewSpawnSaved_Callback(Database db, DBResultSet results, const char[] error, any data)
+{
+	int client = GetClientOfUserId(data);
+	if(db == INVALID_HANDLE || strlen(error) > 0 || results == INVALID_HANDLE)
+	{
+		LogError("Error during saving a spawn: %s", error);
+		if(IsClientConnected(client))
+		{
+			CPrintToChat(client, "There has been an error during saving a spawn. Check your console.");
+			PrintToConsole(client, "%s", error);
+		}
+		return;
+	}
+}
 public void DB_LoadScenarios_Callback(Database db, DBResultSet results, const char[] error, any data)
 {
 	if(db == INVALID_HANDLE || strlen(error) > 0 || results == INVALID_HANDLE)
