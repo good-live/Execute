@@ -48,8 +48,6 @@ char g_sRifles[][][] = {
 	{"weapon_scar20","Scar 20"},
 	{"weapon_sg556","sg556"},
 	{"weapon_ssg08","Scout"},
-	{"random_rifle", "Random Rifle"},
-	{"pref_rifle", "Prefered Rifle"}
 };
 
 char g_sShotguns[][][] = {
@@ -57,8 +55,6 @@ char g_sShotguns[][][] = {
 	{"weapon_sawedoff","SawedOff"},
 	{"weapon_nova","Nova"},
 	{"weapon_mag7","MAG7"},
-	{"random_shotgun", "Random Shotgun"},
-	{"pref_shotgun", "Prefered Shotgun"}
 };
 
 char g_sMPs[][][] = {
@@ -68,8 +64,6 @@ char g_sMPs[][][] = {
 	{"weapon_ump45","UMP"},
 	{"weapon_p90","P90"},
 	{"weapon_mac10","MAC-10"},
-	{"random_mp", "Random MP"},
-	{"pref_mp", "Prefered MP"}
 };
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
@@ -590,6 +584,8 @@ void ShowRifleMenu(int client)
 		IntToString(i, sInfo, sizeof(sInfo));
 		menu.AddItem(sInfo, g_sRifles[i][1]);
 	}
+	menu.AddItem("random_rifle", "Random Rifle");
+	menu.AddItem("pref_rifle", "Prefered Rifle");
 	menu.Display(client, MENU_TIME_FOREVER);
 }
 
@@ -617,6 +613,8 @@ void ShowShotgunMenu(int client)
 		IntToString(i, sInfo, sizeof(sInfo));
 		menu.AddItem(sInfo, g_sShotguns[i][1]);
 	}
+	menu.AddItem("random_shotgun", "Random Shotgun");
+	menu.AddItem("pref_shotgun", "Prefered Shotgun");
 	menu.Display(client, MENU_TIME_FOREVER);
 }
 
@@ -644,6 +642,8 @@ void ShowMPMenu(int client)
 		IntToString(i, sInfo, sizeof(sInfo));
 		menu.AddItem(sInfo, g_sMPs[i][1]);
 	}
+	menu.AddItem("random_mp", "Random MP");
+	menu.AddItem("pref_mp", "Prefered MP");
 	menu.Display(client, MENU_TIME_FOREVER);
 }
 
