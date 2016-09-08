@@ -1,3 +1,5 @@
+#include <clientprefs>
+
 bool g_bUseM4[MAXPLAYERS + 1];
 char g_sPrimaryPref[MAXPLAYERS + 1] [32];
 char g_sRiflePref[MAXPLAYERS + 1] [32];
@@ -62,7 +64,7 @@ void ShowGunMenuToClient(int client)
 	menu.Display(client, MENU_TIME_FOREVER);
 }
 
-public int GunMenu_Callback(Menu menu, MenuAction action, int param1, int param2)
+public int GunMenu_Callback(Menu menu, MenuAction action, int client, int param2)
 {
 	switch(action)
 	{
@@ -73,13 +75,13 @@ public int GunMenu_Callback(Menu menu, MenuAction action, int param1, int param2
 			menu.GetItem(param2, info, sizeof(info));
 			if(StrEqual("m4_n", info, false))
 			{
-				g_bUseM4[param1] = false;
-				SetClientCookie(param1, g_hM4Cookie, "0");
-				CPrintToChat(param1, "%t%t", "TAG", "You stopped using M4A1");
+				g_bUseM4[client] = false;
+				SetClientCookie(client, g_hM4Cookie, "0");
+				CPrintToChat(client, "%t%t", "TAG", "You stopped using M4A1");
 			}else if(StrEqual("m4_y", info, false)){
-				g_bUseM4[param1] = true;
-				SetClientCookie(param1, g_hM4Cookie, "1");
-				CPrintToChat(param1, "%t%t", "TAG", "You started using M4A1");
+				g_bUseM4[client] = true;
+				SetClientCookie(client, g_hM4Cookie, "1");
+				CPrintToChat(client, "%t%t", "TAG", "You started using M4A1");
 			}else if(StrEqual("primary", info, false)){
 				ShowPrimarySelection(client);
 			}else if(StrEqual("rifle", info, false)){
@@ -101,29 +103,151 @@ public int GunMenu_Callback(Menu menu, MenuAction action, int param1, int param2
 	}
 }
 
-void ShowPrimarySelection(int client, char[][][] sWeapons, char [][] sCookie)
+void ShowRifleSelection(int client)
 {
-	Menu menu = new Menu(PrimarySelection);
+	Menu menu = new Menu(RifleSelection);
 	char sTitle[16];
-	Format(sTitle, sizeof(sTitle), "%t", "Primary Selection - Title");
-	menu.AddItem(sTitle);
-	char sInfo[8];
+	Format(sTitle, sizeof(sTitle), "%t", "Rifle Selection - Title");
+	menu.SetTitle(sTitle);
+	char sInfo[32];
 	for (int i = 0; i < sizeof(g_sRifles); i++)
 	{
 		IntToString(i, sInfo, sizeof(sInfo));
 		menu.AddItem(sInfo, g_sRifles[i][1]);
 	}
-	for (int i = 0; i < sizeof(g_sShotguns); i++)
+	menu.Display(client, MENU_TIME_FOREVER);
+}
+
+public int RifleSelection(Menu menu, MenuAction action, int client, int param2)
+{
+	switch(action)
 	{
-		IntToString(i, sInfo, sizeof(sInfo));
-		menu.AddItem(sInfo, g_sShotguns[i][1]);
+		case MenuAction_Select:
+		{
+			char info[32];
+			menu.GetItem(param2, info, sizeof(info));
+			SetClientCookie(client, g_hRifleCookie, info);
+			Format(g_sRiflePref[client], 32, "%s", info);
+		}
+		case MenuAction_Cancel:
+		{
+			delete menu;
+		}
+		case MenuAction_End:
+		{
+			delete menu;
+		}
 	}
+}
+
+void ShowMPSelection(int client)
+{
+	Menu menu = new Menu(MPSelection);
+	char sTitle[16];
+	Format(sTitle, sizeof(sTitle), "%t", "Shotgun Selection - Title");
+	menu.SetTitle(sTitle);
+	char sInfo[32];
 	for (int i = 0; i < sizeof(g_sMPs); i++)
 	{
 		IntToString(i, sInfo, sizeof(sInfo));
 		menu.AddItem(sInfo, g_sMPs[i][1]);
 	}
+	menu.Display(client, MENU_TIME_FOREVER);
 }
+
+public int MPSelection(Menu menu, MenuAction action, int client, int param2)
+{
+	switch(action)
+	{
+		case MenuAction_Select:
+		{
+			char info[32];
+			menu.GetItem(param2, info, sizeof(info));
+			SetClientCookie(client, g_hMPCookie, info);
+			Format(g_sMPPref[client], 32, "%s", info);
+		}
+		case MenuAction_Cancel:
+		{
+			delete menu;
+		}
+		case MenuAction_End:
+		{
+			delete menu;
+		}
+	}
+}
+
+void ShowShotgunSelection(int client)
+{
+	Menu menu = new Menu(ShotgunSelection);
+	char sTitle[16];
+	Format(sTitle, sizeof(sTitle), "%t", "Shotgun Selection - Title");
+	menu.SetTitle(sTitle);
+	char sInfo[32];
+	for (int i = 0; i < sizeof(g_sRifles); i++)
+	{
+		IntToString(i, sInfo, sizeof(sInfo));
+		menu.AddItem(sInfo, g_sShotguns[i][1]);
+	}
+	menu.Display(client, MENU_TIME_FOREVER);
+}
+
+public int ShotgunSelection(Menu menu, MenuAction action, int client, int param2)
+{
+	switch(action)
+	{
+		case MenuAction_Select:
+		{
+			char info[32];
+			menu.GetItem(param2, info, sizeof(info));
+			SetClientCookie(client, g_hShotgunCookie, info);
+			Format(g_sShotgunPref[client], 32, "%s", info);
+		}
+		case MenuAction_Cancel:
+		{
+			delete menu;
+		}
+		case MenuAction_End:
+		{
+			delete menu;
+		}
+	}
+}
+
+void ShowPrimarySelection(int client)
+{
+	Menu menu = new Menu(PrimarySelection);
+	char sTitle[16];
+	Format(sTitle, sizeof(sTitle), "%t", "Primary Selection - Title");
+	menu.SetTitle(sTitle);
+	menu.AddItem("rifle", "Rifle");
+	menu.AddItem("mp", "MP");
+	menu.AddItem("shot", "Shotgun");
+	menu.Display(client, MENU_TIME_FOREVER);
+}
+
+public int PrimarySelection(Menu menu, MenuAction action, int client, int param2)
+{
+	switch(action)
+	{
+		case MenuAction_Select:
+		{
+			char info[32];
+			menu.GetItem(param2, info, sizeof(info));
+			SetClientCookie(client, g_hPrimaryCookie, info);
+			Format(g_sPrimaryPref[client], 32, "%s", info);
+		}
+		case MenuAction_Cancel:
+		{
+			delete menu;
+		}
+		case MenuAction_End:
+		{
+			delete menu;
+		}
+	}
+}
+
 
 public void OnClientCookiesCached(int client)
 {
